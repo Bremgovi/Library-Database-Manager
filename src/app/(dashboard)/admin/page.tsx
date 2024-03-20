@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 
 const page = async () => {
   const session = await getServerSession(authOptions);
+  console.log(session?.user);
   if (session?.user) {
     return (
       <div>

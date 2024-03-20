@@ -1,11 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { db } from "./db";
 import { compare } from "bcrypt";
+import { db } from "./db";
 
 export const authOptions : NextAuthOptions ={
-    adapter: PrismaAdapter(db),
     secret: process.env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
@@ -25,15 +23,15 @@ export const authOptions : NextAuthOptions ={
                 return null;
             }
             
-            const existingUser = await db.user.findUnique({where: {username: credentials.username}})
-            if(!existingUser){return null;}
+            const existingUser = await db.query('SELECT * FROM users WHERE username = $1', [credentials.username]);
+            if(existingUser.rows.length == 0){return null;}
             
-            const passwordMatch = await compare(credentials.password, existingUser.password);
+            const passwordMatch = await compare(credentials.password, existingUser.rows[0].password);
             if(!passwordMatch){return null;}
 
             return{
-                id: existingUser.id + '',
-                username: existingUser.username,
+                id: existingUser.rows[0].id + '',
+                username: existingUser.rows[0].username,
             }
           }
         })

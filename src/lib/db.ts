@@ -1,15 +1,14 @@
-import { PrismaClient } from '@prisma/client'
+import {Pool} from 'pg';
 
-const prismaClientSingleton = () => {
-  return new PrismaClient()
+let db: any;
+
+if(!db){
+    db = new Pool({
+        user: 'postgres',
+        host: 'localhost',
+        database: 'prueba1',
+        password: 'its',
+        port: 5432,
+    });
 }
-
-declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
-}
-
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
-
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
-
-export const db = prisma;
+export {db};
