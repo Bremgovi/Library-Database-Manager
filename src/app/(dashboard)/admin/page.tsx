@@ -5,25 +5,21 @@ import { getServerSession } from "next-auth";
 
 const page = async () => {
   const session = await getServerSession(authOptions);
-  console.log(session?.user);
-  if (session?.user) {
-    return (
-      <div>
-        <Navbar />
-        <Center height="100vh">
-          <Stack>
-            <Text fontSize="6xl" textAlign="center">
-              Welcome back
-            </Text>
-            <Text fontSize="6xl" color="red" textAlign="center">
-              {session?.user.username}!
-            </Text>
-          </Stack>
-        </Center>
-      </div>
-    );
-  }
-  return (
+  return session?.user ? (
+    <div>
+      <Navbar />
+      <Center height="100vh">
+        <Stack>
+          <Text fontSize="6xl" textAlign="center">
+            Welcome back
+          </Text>
+          <Text fontSize="6xl" color="red" textAlign="center">
+            {session?.user.username}!
+          </Text>
+        </Stack>
+      </Center>
+    </div>
+  ) : (
     <Center height="100vh">
       <Stack>
         <Text fontSize="6xl" textAlign="center">

@@ -7,7 +7,12 @@ export async function POST(req: Request){
     try{
         const body = await req.json();
         const {username, password} = body;
-
+        if(!username || !password){
+            return NextResponse.json(
+                {user: null, message: "Username and password cannot be empty!"},
+                {status: 400}
+            );
+        }
         //Check if username and password are valid
         const selectQuery= 'SELECT * FROM users WHERE username = $1';
         const values = [username];

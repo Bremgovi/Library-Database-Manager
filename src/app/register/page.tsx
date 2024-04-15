@@ -50,6 +50,7 @@ const RegisterForm = () => {
 
   const handleFormSubmit = async () => {
     setIsLoading(true);
+    // Send request to create user
     const response = await fetch("/api/user", {
       method: "POST",
       headers: {
@@ -58,11 +59,15 @@ const RegisterForm = () => {
       body: JSON.stringify({ username: username, password: password }),
     });
 
+    // Handle response
     if (response.ok) {
       router.push("/login");
       showToast("Account created. ", "We've created your account for you.", "success");
+    } else if (response.status === 409) {
+      showToast("Creation failed. ", "User already exists with this username", "error");
+    } else if (response.status === 400) {
+      showToast("Creation failed. ", "The username and password cannot be empty", "error");
     } else {
-      console.error("Error occurred while creating user");
       showToast("Creation failed. ", "There was an error creating your account.", "error");
     }
     setIsLoading(false);
