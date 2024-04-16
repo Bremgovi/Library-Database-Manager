@@ -2,9 +2,11 @@ import Navbar from "@/components/navbar";
 import { authOptions } from "@/lib/auth";
 import { Center, Stack, Text } from "@chakra-ui/react";
 import { getServerSession } from "next-auth";
+import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 
 const page = async () => {
   const session = await getServerSession(authOptions);
+  console.log(session?.user);
   return session?.user ? (
     <div>
       <Navbar />

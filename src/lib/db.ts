@@ -6,9 +6,11 @@ if(!db){
     db = new Pool({
         user: 'postgres',
         host: 'localhost',
-        database: 'prueba1',
+        database: 'biblioteca',
         password: 'its',
         port: 5432,
     });
 }
+if (db){console.log("DB connected") }
+
 export {db};

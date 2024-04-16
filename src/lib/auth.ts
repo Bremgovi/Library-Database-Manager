@@ -15,23 +15,21 @@ export const authOptions : NextAuthOptions ={
         CredentialsProvider({
           name: "Credentials",
           credentials: {
-            username: { label: "Username", type: "text"},
-            password: { label: "Password", type: "password" }
+            username: { label: "username", type: "text"},
+            password: { label: "password", type: "password" }
           },
           async authorize(credentials) {
             if(!credentials?.username || !credentials?.password){
                 return null;
             }
-            
-            const existingUser = await db.query('SELECT * FROM users WHERE username = $1', [credentials.username]);
+            const existingUser = await db.query('SELECT * FROM usuarios WHERE usuario = $1', [credentials.username]);
             if(existingUser.rows.length == 0){return null;}
-            
-            const passwordMatch = await compare(credentials.password, existingUser.rows[0].password);
+            const passwordMatch = await compare(credentials.password, existingUser.rows[0].contrasena);
             if(!passwordMatch){return null;}
 
             return{
-                id: existingUser.rows[0].id + '',
-                username: existingUser.rows[0].username,
+                id: existingUser.rows[0].id_usuario + '',
+                username: existingUser.rows[0].usuario,
             }
           }
         })
