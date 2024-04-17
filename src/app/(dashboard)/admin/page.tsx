@@ -2,15 +2,14 @@ import Navbar from "@/components/navbar";
 import { authOptions } from "@/lib/auth";
 import { Center, Stack, Text } from "@chakra-ui/react";
 import { getServerSession } from "next-auth";
-import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
+import Sidebar from "./Sidebar";
 
 const page = async () => {
   const session = await getServerSession(authOptions);
-  console.log(session?.user);
   return session?.user ? (
-    <div>
-      <Navbar />
-      <Center height="100vh">
+    <div style={{ display: "flex", height: "100vh" }}>
+      <Sidebar />
+      <Center style={{ flex: "1" }}>
         <Stack>
           <Text fontSize="6xl" textAlign="center">
             Welcome back
