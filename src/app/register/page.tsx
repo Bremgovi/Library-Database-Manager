@@ -79,24 +79,26 @@ const RegisterForm = () => {
   return (
     <Flex width="70%" height="100%" p={4} justify="center" align="center" bg="rgba(200,200,200, 0.1)">
       <Box width="80%" p={4} bg="white" borderRadius={10}>
-        <Heading textAlign="center">Registration</Heading>
+        <Heading textAlign="center" color={"black"}>
+          Registration
+        </Heading>
         <form onSubmit={handleFormSubmit}>
           <FormControl isInvalid={isUsernameError} isRequired>
-            <FormLabel>Username</FormLabel>
-            <Input type="text" value={username} onChange={handleUsernameChange} />
-            {!isUsernameError ? <FormHelperText>Enter your username</FormHelperText> : <FormErrorMessage>Username is required.</FormErrorMessage>}
+            <FormLabel color={"black"}>Username</FormLabel>
+            <Input type="text" value={username} onChange={handleUsernameChange} color={"black"} />
+            {!isUsernameError ? <FormHelperText color={"black"}>Enter your username</FormHelperText> : <FormErrorMessage>Username is required.</FormErrorMessage>}
           </FormControl>
 
           <FormControl isInvalid={isPasswordError} mt={4}>
-            <FormLabel>Password</FormLabel>
-            <Input type="password" value={password} onChange={handlePasswordChange} />
+            <FormLabel color={"black"}>Password</FormLabel>
+            <Input type="password" value={password} onChange={handlePasswordChange} color={"black"} />
             {!isPasswordError ? <FormHelperText>Enter your password</FormHelperText> : <FormErrorMessage>Password is required.</FormErrorMessage>}
           </FormControl>
           <Button type="submit" isLoading={isLoading} colorScheme="purple" width="100%" mt={8} onClick={handleFormSubmit} spinner={<BeatLoader size={8} color="white" />}>
             Sign Up
           </Button>
         </form>
-        <Text textAlign="center" mt={4}>
+        <Text textAlign="center" mt={4} color={"black"}>
           Already have an account?{" "}
           <Link fontWeight="bold" color="blue.500" href="/login">
             Sign In

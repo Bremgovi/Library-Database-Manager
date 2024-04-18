@@ -1,24 +1,43 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, MenuItem } from "react-pro-sidebar";
 import { Sidebar as ProSidebar } from "react-pro-sidebar";
-import { Box, Text, useColorMode, useColorModeValue, ColorModeProvider, Switch, Flex, IconButton, Avatar, AvatarBadge, Icon } from "@chakra-ui/react";
+import { Box, Text, useColorMode, useColorModeValue, ColorModeProvider, Switch, Flex, IconButton, Avatar, AvatarBadge, Icon, Link } from "@chakra-ui/react";
 import { HamburgerIcon, MoonIcon, SunIcon, ViewIcon, InfoIcon } from "@chakra-ui/icons";
+import NextLink from "next/link";
 
-const Item = ({ title, selected, setSelected, color, icon }: { title: string; selected: string; setSelected: (value: string) => void; color: string; icon: JSX.Element }) => {
+const Item = ({ title, color, icon, link }: { title: string; color: string; icon: JSX.Element; link: string }) => {
   return (
-    <MenuItem onClick={() => setSelected(title)} active={selected === title} icon={icon}>
+    <MenuItem component={<Link as={NextLink} href={link} />} icon={icon}>
       <Text color={color}>{title}</Text>
     </MenuItem>
   );
 };
 
-const Sidebar = () => {
+const Sidebar = ({ username }: { username: string }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Dashboard");
   const { colorMode, toggleColorMode } = useColorMode();
   const textColor = useColorModeValue("black", "white");
   const iconColor = useColorModeValue("gray.600", "gray.300");
+  const [typeName, setTypeName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      try {
+        const response = await fetch(`api/user?username=${username}`, { method: "GET" });
+        if (response.ok) {
+          const data = await response.json();
+          setTypeName(data.type);
+        } else {
+          console.error("Failed to fetch user type");
+        }
+      } catch (error) {
+        console.error("Error fetching user type:", error);
+      }
+    };
+
+    fetchUserType();
+  }, [username]);
 
   return (
     <ColorModeProvider options={{ initialColorMode: "dark" }}>
@@ -50,10 +69,11 @@ const Sidebar = () => {
                     <AvatarBadge boxSize="0.7em" bg="green.500" />
                   </Avatar>
                   <Text fontSize="2xl" fontWeight="bold" mt="2">
-                    Username
+                    {username}
                   </Text>
                   <Text fontSize="md" color="green.500">
-                    Type of user
+                    {" "}
+                    {typeName || "Loading..."}
                   </Text>
                 </Flex>
               </Box>
@@ -63,7 +83,7 @@ const Sidebar = () => {
             <Flex alignItems="center" justifyContent="center" marginBottom="20px">
               <IconButton
                 aria-label="Toggle Dark Mode"
-                icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon color="black" />}
+                icon={colorMode === "dark" ? <SunIcon color="white" /> : <MoonIcon color="black" />}
                 onClick={toggleColorMode}
                 variant="ghost"
                 fontSize="20px"
@@ -74,8 +94,8 @@ const Sidebar = () => {
 
             {/* MENU ITEMS */}
             <Box paddingLeft={isCollapsed ? undefined : "10%"}>
-              <Item title="Dashboard" selected={selected} setSelected={setSelected} color={textColor} icon={<Icon as={ViewIcon} color={iconColor} />} />
-              <Item title="Contacts" selected={selected} setSelected={setSelected} color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} />
+              <Item title="Cargos" color={textColor} icon={<Icon as={ViewIcon} color={iconColor} />} link="/admin/cargos" />
+              <Item title="Adeudos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/adeudos" />
             </Box>
           </Menu>
         </ProSidebar>

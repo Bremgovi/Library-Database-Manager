@@ -2,7 +2,6 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import { db } from "./db";
-
 export const authOptions : NextAuthOptions ={
     secret: process.env.NEXTAUTH_SECRET,
     session: {
@@ -26,20 +25,21 @@ export const authOptions : NextAuthOptions ={
             if(existingUser.rows.length == 0){return null;}
             const passwordMatch = await compare(credentials.password, existingUser.rows[0].contrasena);
             if(!passwordMatch){return null;}
-
+            
             return{
-                id: existingUser.rows[0].id_usuario + '',
-                username: existingUser.rows[0].usuario,
+                  id: existingUser.rows[0].id_usuario + '',
+                  username: existingUser.rows[0].usuario
             }
           }
         })
       ],
+      
       callbacks:{
         async jwt({ token, user, }) {
           if (user) {
             return{
               ...token, 
-              username : user.username
+              username : user.username,
             }
           }
           return token
@@ -49,7 +49,7 @@ export const authOptions : NextAuthOptions ={
             ...session,
             user: {
               ...session.user,
-              username: token.username
+              username: token.username,
             }
           }
         },

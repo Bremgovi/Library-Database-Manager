@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link, useToast } from "@chakra-ui/react";
+import React, { useState } from "react";
+import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link, IconButton } from "@chakra-ui/react";
+import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import ParticleEffect from "../../components/particles";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -10,7 +11,7 @@ import useCustomToast from "../../components/toasts";
 const Homepage = () => {
   return (
     <>
-      <Flex minHeight="100vh" width="100%" align="center" justify="center" bg="#1d1d29">
+      <Flex minHeight="100vh" width="100%" align="center" justify="center" bg={"#1d1d29"}>
         <BigContainer />
       </Flex>
       <ParticleEffect />
@@ -29,7 +30,7 @@ const BigContainer = () => {
 
 const ImageContainer = () => {
   return (
-    <Flex width="30%" height="100%" p={4} justify="center" align="center" bg="white">
+    <Flex width="30%" height="100%" p={4} justify="center" align="center" bg={"white"}>
       <Image src="/kaguya.png" alt="Image" />
     </Flex>
   );
@@ -63,7 +64,7 @@ const LoginForm = () => {
       console.log(signInData.error);
       showToast("Login failed. ", "There was an error logging in. Please try again.", "error");
     } else {
-      showToast("Login succesful. ", "You've succesfully logged in.", "success");
+      showToast("Login successful. ", "You've successfully logged in.", "success");
       router.push("/admin");
     }
     setIsLoading(false);
@@ -73,27 +74,29 @@ const LoginForm = () => {
   const isPasswordError = password === "";
 
   return (
-    <Flex width="70%" height="100%" p={4} justify="center" align="center" bg="rgba(200,200,200, 0.1)">
-      <Box width="80%" p={4} bg="white" borderRadius={10}>
-        <Heading textAlign="center">Login</Heading>
+    <Flex width="70%" height="100%" p={4} justify="center" align="center" bg={"rgba(200,200,200, 0.1)"}>
+      <Box width="80%" p={4} bg={"white"} borderRadius={10}>
+        <Heading textAlign="center" color={"black"}>
+          Login
+        </Heading>
         <form onSubmit={handleFormSubmit}>
           <FormControl isInvalid={isUsernameError} isRequired>
-            <FormLabel>Username</FormLabel>
-            <Input type="text" value={username} onChange={handleUsernameChange} />
-            {!isUsernameError ? <FormHelperText>Enter your username</FormHelperText> : <FormErrorMessage>Username is required.</FormErrorMessage>}
+            <FormLabel color={"black"}>Username</FormLabel>
+            <Input type="text" value={username} onChange={handleUsernameChange} color={"black"} />
+            {!isUsernameError ? <FormHelperText color={"black"}>Enter your username</FormHelperText> : <FormErrorMessage color={"red"}>Username is required.</FormErrorMessage>}
           </FormControl>
 
           <FormControl isInvalid={isPasswordError} mt={4}>
-            <FormLabel>Password</FormLabel>
-            <Input type="password" value={password} onChange={handlePasswordChange} />
-            {!isPasswordError ? <FormHelperText>Enter your password</FormHelperText> : <FormErrorMessage>Password is required.</FormErrorMessage>}
+            <FormLabel color={"black"}>Password</FormLabel>
+            <Input type="password" value={password} onChange={handlePasswordChange} color={"black"} />
+            {!isPasswordError ? <FormHelperText color={"black"}>Enter your password</FormHelperText> : <FormErrorMessage color={"red"}>Password is required.</FormErrorMessage>}
           </FormControl>
 
           <Button isLoading={isLoading} type="submit" colorScheme="purple" width="100%" mt={8} onClick={handleFormSubmit} spinner={<BeatLoader size={8} color="white" />}>
             Sign In
           </Button>
         </form>
-        <Text textAlign="center" mt={4}>
+        <Text textAlign="center" mt={4} color={"black"}>
           Don't have an account?{" "}
           <Link fontWeight="bold" color="blue.500" href="/register">
             Sign up

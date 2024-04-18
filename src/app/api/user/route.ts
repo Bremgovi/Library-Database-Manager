@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import {db} from "../../../lib/db";
 
@@ -34,4 +34,16 @@ export async function POST(req: Request){
         console.error("Error creating user: ", e);
         return NextResponse.json({message: "Something went wrong!" + e}, {status: 500});
     }
+}
+
+
+ // GET REQUEST FOR USER TYPE
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const username = searchParams.get('username');
+  const type = await db.query('SELECT tu.descripcion FROM usuarios u JOIN tipos_usuario tu ON u.id_tipo = tu.id_tipo WHERE u.usuario = $1', [username]);
+  if (type.rows.length === 0) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+  return NextResponse.json({type: type.rows[0].descripcion}, {status: 200});
 }
