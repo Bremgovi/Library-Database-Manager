@@ -1,4 +1,3 @@
-// api/generic.ts
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -6,7 +5,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { table, data, condition, deleteCondition } = body;
-
     if (!table) {
       return NextResponse.json(
         { message: "Table name is required!" },
@@ -106,7 +104,6 @@ export async function GET(req: Request) {
   try {
     const searchParams = new URL(req.url).searchParams;
     const table = searchParams.get('table');
-
     if (!table) {
       return NextResponse.json(
         { message: "Table name is required!" },
