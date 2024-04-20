@@ -95,7 +95,8 @@ const Sidebar = ({ username }: { username: string }) => {
             {/* MENU ITEMS */}
             <Box paddingLeft={isCollapsed ? undefined : "10%"}>
               <Item title="Cargos" color={textColor} icon={<Icon as={ViewIcon} color={iconColor} />} link="/admin/cargos" />
-              <Item title="Adeudos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/adeudos" />
+              <Item title="Generos Persona" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/generos_persona" />
+              <Item title="Autores" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/autores" />
             </Box>
           </Menu>
         </ProSidebar>

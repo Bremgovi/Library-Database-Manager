@@ -5,6 +5,8 @@ import { Text, Center, Stack, FormControl, FormLabel, Input, Table, Thead, Tr, T
 interface Column {
   key: string;
   label: string;
+  type: "varchar" | "int";
+  length?: number;
 }
 
 interface RowData {
@@ -13,23 +15,60 @@ interface RowData {
 
 interface TableProps {
   table: string;
-  columns: Column[];
   endpoint: string;
 }
 
-const GenericTable = ({ table, columns, endpoint }: TableProps) => {
-  const firstColumnName = columns[0]?.key;
+const GenericTable = ({ table, endpoint }: TableProps) => {
+  const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
+  const [columns, setColumns] = useState<Column[]>([]);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
   const showToast = useCustomToast();
 
+  useEffect(() => {
+    const fetchTableSchema = async () => {
+      try {
+        const response = await fetch(`${endpoint}?tableSchema=${table}`);
+        if (response.ok) {
+          const responseData = await response.json();
+          setColumns(responseData.columns);
+          setFirstColumnName(responseData.columns[0].key);
+        } else {
+          showToast("Fetch failed", "Failed to fetch table schema from the server.", "error");
+        }
+      } catch (error) {
+        showToast("Error", "An error occurred while fetching table schema." + error, "error");
+      }
+    };
+
+    fetchTableSchema();
+  }, [table, endpoint, showToast]);
+
   const handleChange = (e: { target: { name: string; value: any } }) => {
     const { name, value } = e.target;
+
+    // Get the column configuration for the current input
+    const currentColumn = columns.find((column) => column.key === name);
+
+    if (currentColumn && currentColumn.type === "varchar") {
+      if (currentColumn.length && value.length > currentColumn.length) {
+        showToast("Validation Error", `Input exceeds ${currentColumn.label} length limit.`, "error");
+        return;
+      }
+    }
+
     setRowData({
       ...rowData,
       [name]: value,
     });
+
+    const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
+
+    if (matchingRow) {
+      setSelectedRow(matchingRow);
+      setRowData(matchingRow);
+    }
   };
 
   const handleInsert = async () => {
@@ -53,7 +92,7 @@ const GenericTable = ({ table, columns, endpoint }: TableProps) => {
     }
   };
 
-  const handleModify = async () => {
+  const handleUpdate = async () => {
     try {
       if (selectedRow) {
         const response = await fetch(endpoint, {
@@ -133,6 +172,17 @@ const GenericTable = ({ table, columns, endpoint }: TableProps) => {
     fetchData();
   }, []);
 
+  const formatLabel = (label: string): string => {
+    const replacedLabel = label.replaceAll("ap", "Apellido");
+    return replacedLabel
+      .split("_")
+      .map((word) => {
+        const words = word.split(/(?=[A-Z])/).map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+        return words.join("");
+      })
+      .join(" ");
+  };
+
   return (
     <Center height="100%">
       <Stack spacing={4} width="80%">
@@ -141,8 +191,14 @@ const GenericTable = ({ table, columns, endpoint }: TableProps) => {
         </Text>
         {columns.map((column) => (
           <FormControl key={column.key}>
-            <FormLabel>{column.label}</FormLabel>
-            <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={`Enter ${column.label}`} />
+            <FormLabel>{formatLabel(column.label)}</FormLabel>
+            <Input
+              name={column.key}
+              value={rowData[column.key] || ""}
+              onChange={handleChange}
+              placeholder={`Enter ${formatLabel(column.label)}`}
+              type={column.type === "int" ? "number" : "text"}
+            />
           </FormControl>
         ))}
         <Box maxH="200px" overflowY="auto">
@@ -174,8 +230,8 @@ const GenericTable = ({ table, columns, endpoint }: TableProps) => {
           <Button onClick={handleInsert} colorScheme="green">
             Insert
           </Button>
-          <Button onClick={handleModify} colorScheme="purple">
-            Modify
+          <Button onClick={handleUpdate} colorScheme="purple">
+            Update
           </Button>
           <Button onClick={handleDelete} colorScheme="red">
             Delete

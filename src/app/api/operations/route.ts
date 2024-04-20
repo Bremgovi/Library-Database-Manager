@@ -99,12 +99,14 @@ export async function POST(req: Request) {
     );
   }
 }
-
+/*
 export async function GET(req: Request) {
   try {
     const searchParams = new URL(req.url).searchParams;
     const table = searchParams.get('table');
-    if (!table) {
+    const tableSchema = searchParams.get('tableSchema');
+    
+    if (!tableSchema && !table) {
       return NextResponse.json(
         { message: "Table name is required!" },
         { status: 400 }
@@ -122,10 +124,42 @@ export async function GET(req: Request) {
     }
     
     const data = result.rows;
+
+    // For table Schema
+    
+    if (tableSchema) {
+      const query = `
+        SELECT column_name AS key,
+               column_name AS label,
+               data_type AS type,
+               character_maximum_length AS length
+        FROM information_schema.columns
+        WHERE table_name = $1
+        AND table_schema = 'public';
+      `;
+      const result = await db.query(query, [tableSchema]);
+
+      if (!result.rows.length) {
+        return NextResponse.json({ message: 'No schema found for the specified table!' }, { status: 400 });
+      }
+
+      const columns = result.rows.map((row: { key: any; label: any; type: string | string[]; length: any; }) => ({
+        key: row.key,
+        label: row.label,
+        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : 'unknown',
+        length: row.length,
+      }));
+
+      return NextResponse.json({ columns, message: 'Table schema retrieved successfully!' } ,{status:200});
+    }
+
     return NextResponse.json(
       { data, message: "Data retrieved successfully!" },
       { status: 200 }
     );
+
+
+    
 
   } catch (e) {
     console.error("Error processing request: ", e);
@@ -133,5 +167,58 @@ export async function GET(req: Request) {
       { message: "Something went wrong!" },
       { status: 500 }
     );
+  }
+}
+*/
+
+export async function GET(req: Request) {
+  try {
+    const searchParams = new URL(req.url).searchParams;
+    const table = searchParams.get('table');
+    const tableSchema = searchParams.get('tableSchema');
+
+    if (!table && !tableSchema) {
+      return NextResponse.json({ message: 'Table name or table schema is required!' });
+    }
+
+    if (tableSchema) {
+      const schemaQuery = `
+        SELECT column_name AS key,
+               column_name AS label,
+               data_type AS type,
+               character_maximum_length AS length
+        FROM information_schema.columns
+        WHERE table_name = $1
+        AND table_schema = 'public';
+      `;
+
+      const schemaResult = await db.query(schemaQuery, [tableSchema]);
+
+      if (!schemaResult.rows.length) {
+        return NextResponse.json({ message: 'No schema found for the specified table!' });
+      }
+
+      const columns = schemaResult.rows.map((row: { key: any; label: any; type: string | string[]; length: any; }) => ({
+        key: row.key,
+        label: row.label,
+        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : 'unknown',
+        length: row.length,
+      }));
+
+      return NextResponse.json({ columns, message: 'Table schema retrieved successfully!' });
+    }
+
+    const dataQuery = `SELECT * FROM ${table}`;
+    const dataResult = await db.query(dataQuery);
+
+    if (!dataResult.rows.length) {
+      return NextResponse.json({ message: 'No data found for the specified table!' });
+    }
+
+    return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+
+  } catch (error) {
+    console.error('Error processing request: ', error);
+    return NextResponse.json({ message: 'Something went wrong!' });
   }
 }
