@@ -1,7 +1,8 @@
+
 "use client";
 import GenericTable from "@/components/table";
 
-const Genero = () => {
+const Autores = () => {
   return <GenericTable table="autores" endpoint="/api/operations" />;
 };
-export default Genero;
+export default Autores;

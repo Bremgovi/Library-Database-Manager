@@ -91,77 +91,17 @@ export async function POST(req: Request) {
       );
     }
 
-  } catch (e) {
-    console.error("Error processing request: ", e);
-    return NextResponse.json(
-      { message: "Something went wrong!" },
-      { status: 500 }
-    );
-  }
-}
-/*
-export async function GET(req: Request) {
-  try {
-    const searchParams = new URL(req.url).searchParams;
-    const table = searchParams.get('table');
-    const tableSchema = searchParams.get('tableSchema');
-    
-    if (!tableSchema && !table) {
+  } catch (e:any) {
+
+    if (e.code === '23503') { // Postgres error code for foreign key violation
       return NextResponse.json(
-        { message: "Table name is required!" },
+        { message: "Cannot delete the record because it's being used in another table!",
+          title: "Foreign key violation!"
+         },
         { status: 400 }
       );
     }
 
-    let query = `SELECT * FROM ${table}`;
-    const result = await db.query(query);
-
-    if (!result.rows.length) {
-      return NextResponse.json(
-        { message: "No data found for the specified condition!" },
-        { status: 404 }
-      );
-    }
-    
-    const data = result.rows;
-
-    // For table Schema
-    
-    if (tableSchema) {
-      const query = `
-        SELECT column_name AS key,
-               column_name AS label,
-               data_type AS type,
-               character_maximum_length AS length
-        FROM information_schema.columns
-        WHERE table_name = $1
-        AND table_schema = 'public';
-      `;
-      const result = await db.query(query, [tableSchema]);
-
-      if (!result.rows.length) {
-        return NextResponse.json({ message: 'No schema found for the specified table!' }, { status: 400 });
-      }
-
-      const columns = result.rows.map((row: { key: any; label: any; type: string | string[]; length: any; }) => ({
-        key: row.key,
-        label: row.label,
-        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : 'unknown',
-        length: row.length,
-      }));
-
-      return NextResponse.json({ columns, message: 'Table schema retrieved successfully!' } ,{status:200});
-    }
-
-    return NextResponse.json(
-      { data, message: "Data retrieved successfully!" },
-      { status: 200 }
-    );
-
-
-    
-
-  } catch (e) {
     console.error("Error processing request: ", e);
     return NextResponse.json(
       { message: "Something went wrong!" },
@@ -169,7 +109,6 @@ export async function GET(req: Request) {
     );
   }
 }
-*/
 
 export async function GET(req: Request) {
   try {

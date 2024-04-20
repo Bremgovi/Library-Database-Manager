@@ -48,7 +48,6 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   const handleChange = (e: { target: { name: string; value: any } }) => {
     const { name, value } = e.target;
 
-    // Get the column configuration for the current input
     const currentColumn = columns.find((column) => column.key === name);
 
     if (currentColumn && currentColumn.type === "varchar") {
@@ -62,12 +61,13 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       ...rowData,
       [name]: value,
     });
+    if (data) {
+      const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
 
-    const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
-
-    if (matchingRow) {
-      setSelectedRow(matchingRow);
-      setRowData(matchingRow);
+      if (matchingRow) {
+        setSelectedRow(matchingRow);
+        setRowData(matchingRow);
+      }
     }
   };
 
@@ -127,14 +127,14 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
           },
           body: JSON.stringify({ table: table, deleteCondition: { [firstColumnName]: selectedRow[firstColumnName] } }),
         });
-
+        const responseData = await response.json();
         if (response.ok) {
           showToast("Deletion completed", "Data has been deleted successfully.", "success");
           fetchData();
           setSelectedRow(null);
           setRowData({});
         } else {
-          showToast("Deletion failed", "There was an error deleting the data.", "error");
+          showToast(responseData.title, responseData.message, "error");
         }
       } else {
         showToast("No data selected", "Please select a row from the table.", "warning");
@@ -189,18 +189,20 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
         <Text fontSize="6xl" textAlign="center">
           Modify {table}
         </Text>
-        {columns.map((column) => (
-          <FormControl key={column.key}>
-            <FormLabel>{formatLabel(column.label)}</FormLabel>
-            <Input
-              name={column.key}
-              value={rowData[column.key] || ""}
-              onChange={handleChange}
-              placeholder={`Enter ${formatLabel(column.label)}`}
-              type={column.type === "int" ? "number" : "text"}
-            />
-          </FormControl>
-        ))}
+        <Box maxHeight="400px" overflowY="auto">
+          {columns.map((column) => (
+            <FormControl key={column.key}>
+              <FormLabel>{formatLabel(column.label)}</FormLabel>
+              <Input
+                name={column.key}
+                value={rowData[column.key] || ""}
+                onChange={handleChange}
+                placeholder={`Enter ${formatLabel(column.label)}`}
+                type={column.type === "int" ? "number" : "text"}
+              />
+            </FormControl>
+          ))}
+        </Box>
         <Box maxH="200px" overflowY="auto">
           <Table variant="simple">
             <Thead>
@@ -211,18 +213,26 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
               </Tr>
             </Thead>
             <Tbody>
-              {data.map((row) => (
-                <Tr
-                  key={row.id}
-                  onClick={() => handleSelectRow(row)}
-                  _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
-                  bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
-                >
-                  {columns.map((column) => (
-                    <Td key={column.key}>{row[column.key]}</Td>
-                  ))}
+              {data ? (
+                data.map((row) => (
+                  <Tr
+                    key={row.id}
+                    onClick={() => handleSelectRow(row)}
+                    _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
+                    bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
+                  >
+                    {columns.map((column) => (
+                      <Td key={column.key}>{row[column.key]}</Td>
+                    ))}
+                  </Tr>
+                ))
+              ) : (
+                <Tr>
+                  <Td colSpan={columns.length} textAlign="center">
+                    No data available
+                  </Td>
                 </Tr>
-              ))}
+              )}
             </Tbody>
           </Table>
         </Box>

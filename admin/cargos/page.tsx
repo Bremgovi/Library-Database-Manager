@@ -1,7 +1,8 @@
+// /admin/cargos/page.tsx
 "use client";
 import GenericTable from "@/components/table";
 
-const Cargo = () => {
+const Cargos = () => {
   return <GenericTable table="cargos" endpoint="/api/operations" />;
 };
-export default Cargo;
+export default Cargos;
