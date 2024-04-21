@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { db } from "./db";
 export const authOptions : NextAuthOptions ={
     secret: process.env.NEXTAUTH_SECRET,

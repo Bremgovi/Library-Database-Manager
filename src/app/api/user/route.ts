@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import {db} from "../../../lib/db";
 
 // POST REQUEST FOR USER CREATION
@@ -7,6 +7,7 @@ export async function POST(req: Request){
     try{
         const body = await req.json();
         const {username, password} = body;
+
         if(!username || !password){
             return NextResponse.json(
                 {user: null, message: "Username and password cannot be empty!"},

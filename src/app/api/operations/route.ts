@@ -1,9 +1,11 @@
 import { db } from "@/lib/db";
+import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log(body);
     const { table, data, condition, deleteCondition } = body;
     if (!table) {
       return NextResponse.json(
@@ -12,6 +14,21 @@ export async function POST(req: Request) {
       );
     }
 
+    if (table === 'usuarios') {
+      const { usuario: username, contrasena: password } = data;
+      console.log(username, password);
+
+      if (!username || !password) {
+        return NextResponse.json(
+          { message: "Username and password cannot be empty!" },
+          { status: 400 }
+        );
+      }
+
+      const hashedPassword = await hash(password, 10);
+      data.contrasena = hashedPassword;
+    }
+    
     if (data && !condition) {
       const columns = Object.keys(data).join(', ');
       const placeholders = Object.keys(data).map((_, index) => `$${index + 1}`).join(', ');

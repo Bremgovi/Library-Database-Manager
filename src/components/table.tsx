@@ -24,6 +24,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   const [rowData, setRowData] = useState<RowData>({});
   const [columns, setColumns] = useState<Column[]>([]);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
+  const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const showToast = useCustomToast();
 
   useEffect(() => {
@@ -65,12 +66,21 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
 
       if (matchingRow) {
+        setPlaceholder(matchingRow);
         setSelectedRow(matchingRow);
-        setRowData(matchingRow);
+        //setRowData(matchingRow);
       }
     }
   };
-
+  const handleTabPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (placeholder) {
+        setRowData(placeholder);
+        setSelectedRow(placeholder);
+      }
+    }
+  };
   const handleOperation = async (operation: "insert" | "update" | "delete") => {
     try {
       let requestBody: any = { table: table };
@@ -155,18 +165,40 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
 
   const renderInput = (column: Column) => {
     if (column.type === "date") {
-      return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={`Select ${formatLabel(column.label)}`} type="date" />;
+      return (
+        <Input
+          name={column.key}
+          value={rowData[column.key] || ""}
+          onChange={handleChange}
+          placeholder={`Select ${formatLabel(column.label)}`}
+          type="date"
+          onKeyDown={handleTabPress}
+        />
+      );
     }
 
-    return (
-      <Input
-        name={column.key}
-        value={rowData[column.key] || ""}
-        onChange={handleChange}
-        placeholder={`Enter ${formatLabel(column.label)}`}
-        type={column.type === "int" ? "number" : "text"}
-      />
-    );
+    if (placeholder && placeholder[column.key]) {
+      return (
+        <Input
+          name={column.key}
+          value={rowData[column.key] || ""}
+          onChange={handleChange}
+          placeholder={placeholder[column.key]}
+          type={column.type === "int" ? "number" : "text"}
+          onKeyDown={handleTabPress}
+        />
+      );
+    } else {
+      return (
+        <Input
+          name={column.key}
+          value={rowData[column.key] || ""}
+          onChange={handleChange}
+          placeholder={`Enter ${formatLabel(column.label)}`}
+          type={column.type === "int" ? "number" : "text"}
+        />
+      );
+    }
   };
 
   return (
