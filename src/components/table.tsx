@@ -1,6 +1,26 @@
 import { useEffect, useState } from "react";
 import useCustomToast from "./toasts";
-import { Text, Center, Stack, FormControl, FormLabel, Input, Table, Thead, Tr, Th, Tbody, useColorModeValue, Td, Flex, Button, Box } from "@chakra-ui/react";
+import {
+  Text,
+  Center,
+  Stack,
+  FormControl,
+  FormLabel,
+  Input,
+  Table,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  useColorModeValue,
+  Td,
+  Flex,
+  Button,
+  Box,
+  Checkbox,
+  RadioGroup,
+  Radio,
+} from "@chakra-ui/react";
 
 interface Column {
   key: string;
@@ -27,6 +47,14 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const showToast = useCustomToast();
 
+  const handleGenreChange = (genreId: string) => {
+    setRowData({
+      ...rowData,
+      id_genero: parseInt(genreId, 10),
+    });
+  };
+  const [genres, setGenres] = useState<RowData[]>([]);
+
   useEffect(() => {
     const fetchTableSchema = async () => {
       try {
@@ -44,7 +72,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
     };
 
     fetchTableSchema();
-  }, [table, endpoint, showToast]);
+  }, []);
 
   const handleChange = (e: { target: { name: string; value: any } }) => {
     const { name, value } = e.target;
@@ -62,12 +90,13 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       ...rowData,
       [name]: value,
     });
+
     if (data) {
       const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
 
       if (matchingRow) {
         setPlaceholder(matchingRow);
-        setSelectedRow(matchingRow);
+        //setSelectedRow(matchingRow);
         //setRowData(matchingRow);
       }
     }
@@ -147,9 +176,23 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       showToast("Error", "An error occurred while fetching data." + error, "error");
     }
   };
+  const fetchGenres = async () => {
+    try {
+      const response = await fetch(`${endpoint}?table=generos_persona`);
+      if (response.ok) {
+        const responseData = await response.json();
+        setGenres(responseData.data);
+      } else {
+        showToast("Fetch failed", "Failed to fetch genres from the server.", "error");
+      }
+    } catch (error) {
+      showToast("Error", "An error occurred while fetching genres." + error, "error");
+    }
+  };
 
   useEffect(() => {
     fetchData();
+    fetchGenres();
   }, []);
 
   const formatLabel = (label: string): string => {
@@ -164,6 +207,24 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   };
 
   const renderInput = (column: Column) => {
+    if (column.key === "id_genero") {
+      return (
+        <FormControl key={column.key}>
+          <Box maxHeight="200px" overflowY="auto">
+            <RadioGroup value={rowData.id_genero ? String(rowData.id_genero) : ""} onChange={(value) => handleGenreChange(value)}>
+              {genres.map((genre) => (
+                <Box key={genre.id_genero}>
+                  <Radio key={genre.id_genero} value={String(genre.id_genero)}>
+                    {genre.descripcion}
+                  </Radio>
+                </Box>
+              ))}
+            </RadioGroup>
+          </Box>
+        </FormControl>
+      );
+    }
+
     if (column.type === "date") {
       return (
         <Input

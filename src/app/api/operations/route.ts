@@ -132,7 +132,6 @@ export async function GET(req: Request) {
     const searchParams = new URL(req.url).searchParams;
     const table = searchParams.get('table');
     const tableSchema = searchParams.get('tableSchema');
-
     if (!table && !tableSchema) {
       return NextResponse.json({ message: 'Table name or table schema is required!' });
     }
@@ -157,7 +156,7 @@ export async function GET(req: Request) {
       const columns = schemaResult.rows.map((row: { key: any; label: any; type: string | string[]; length: any; }) => ({
         key: row.key,
         label: row.label,
-        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : row.type,
+        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') || row.type.includes('numeric') ? 'int' : row.type,
         length: row.length,
       }));
 
@@ -166,12 +165,11 @@ export async function GET(req: Request) {
 
     const dataQuery = `SELECT * FROM ${table}`;
     const dataResult = await db.query(dataQuery);
-
     if (!dataResult.rows.length) {
       return NextResponse.json({ message: 'No data found for the specified table!' });
+    }else{
+      return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
     }
-
-    return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
 
   } catch (error) {
     console.error('Error processing request: ', error);
