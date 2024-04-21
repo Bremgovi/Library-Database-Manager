@@ -5,7 +5,7 @@ import { Text, Center, Stack, FormControl, FormLabel, Input, Table, Thead, Tr, T
 interface Column {
   key: string;
   label: string;
-  type: "varchar" | "int";
+  type: any;
   length?: number;
 }
 
@@ -71,76 +71,46 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
     }
   };
 
-  const handleInsert = async () => {
+  const handleOperation = async (operation: "insert" | "update" | "delete") => {
     try {
+      let requestBody: any = { table: table };
+
+      switch (operation) {
+        case "insert":
+          requestBody.data = rowData;
+          break;
+        case "update":
+          requestBody.data = rowData;
+          requestBody.condition = { [firstColumnName]: selectedRow![firstColumnName] };
+          break;
+        case "delete":
+          requestBody.deleteCondition = { [firstColumnName]: selectedRow![firstColumnName] };
+          break;
+        default:
+          throw new Error("Invalid operation type");
+      }
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ table: table, data: rowData }),
+        body: JSON.stringify(requestBody),
       });
 
+      const responseData = await response.json();
       if (response.ok) {
-        showToast("Insertion completed", "Data has been added successfully.", "success");
+        const completionMessage = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Completed`;
+        showToast(completionMessage, `Data has been ${operation === "delete" ? "deleted" : operation === "update" ? "updated" : "inserted"} successfully.`, "success");
         fetchData();
       } else {
-        showToast("Insertion failed", "There was an error adding the data.", "error");
+        const defaultTitle = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Failed`;
+        const defaultMessage = `There was an error ${operation === "delete" ? "deleting" : operation + "ing"} the data.`;
+
+        showToast(responseData.title || defaultTitle, responseData.message || defaultMessage, "error");
       }
     } catch (error) {
-      showToast("Error", "An error occurred while inserting data.", "error");
-    }
-  };
-
-  const handleUpdate = async () => {
-    try {
-      if (selectedRow) {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ table: table, data: rowData, condition: { [firstColumnName]: selectedRow[firstColumnName] } }),
-        });
-
-        if (response.ok) {
-          showToast("Modification completed", "Data has been updated successfully.", "success");
-          fetchData();
-        } else {
-          showToast("Modification failed", "There was an error updating the data.", "error");
-        }
-      } else {
-        showToast("No data selected", "Please select a row from the table.", "warning");
-      }
-    } catch (error) {
-      showToast("Error", "An error occurred while modifying data.", "error");
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      if (selectedRow) {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ table: table, deleteCondition: { [firstColumnName]: selectedRow[firstColumnName] } }),
-        });
-        const responseData = await response.json();
-        if (response.ok) {
-          showToast("Deletion completed", "Data has been deleted successfully.", "success");
-          fetchData();
-          setSelectedRow(null);
-          setRowData({});
-        } else {
-          showToast(responseData.title, responseData.message, "error");
-        }
-      } else {
-        showToast("No data selected", "Please select a row from the table.", "warning");
-      }
-    } catch (error) {
-      showToast("Error", "An error occurred while deleting data.", "error");
+      showToast("Error", `An error occurred while ${operation}ing data.`, "error");
     }
   };
 
@@ -183,6 +153,22 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       .join(" ");
   };
 
+  const renderInput = (column: Column) => {
+    if (column.type === "date") {
+      return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={`Select ${formatLabel(column.label)}`} type="date" />;
+    }
+
+    return (
+      <Input
+        name={column.key}
+        value={rowData[column.key] || ""}
+        onChange={handleChange}
+        placeholder={`Enter ${formatLabel(column.label)}`}
+        type={column.type === "int" ? "number" : "text"}
+      />
+    );
+  };
+
   return (
     <Center height="100%">
       <Stack spacing={4} width="80%">
@@ -193,13 +179,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
           {columns.map((column) => (
             <FormControl key={column.key}>
               <FormLabel>{formatLabel(column.label)}</FormLabel>
-              <Input
-                name={column.key}
-                value={rowData[column.key] || ""}
-                onChange={handleChange}
-                placeholder={`Enter ${formatLabel(column.label)}`}
-                type={column.type === "int" ? "number" : "text"}
-              />
+              {renderInput(column)}
             </FormControl>
           ))}
         </Box>
@@ -237,13 +217,13 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
           </Table>
         </Box>
         <Flex justifyContent="center" gap={40}>
-          <Button onClick={handleInsert} colorScheme="green">
+          <Button onClick={() => handleOperation("insert")} colorScheme="green">
             Insert
           </Button>
-          <Button onClick={handleUpdate} colorScheme="purple">
+          <Button onClick={() => handleOperation("update")} colorScheme="purple">
             Update
           </Button>
-          <Button onClick={handleDelete} colorScheme="red">
+          <Button onClick={() => handleOperation("delete")} colorScheme="red">
             Delete
           </Button>
         </Flex>

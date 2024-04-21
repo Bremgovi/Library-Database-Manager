@@ -140,7 +140,7 @@ export async function GET(req: Request) {
       const columns = schemaResult.rows.map((row: { key: any; label: any; type: string | string[]; length: any; }) => ({
         key: row.key,
         label: row.label,
-        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : 'unknown',
+        type: row.type.includes('character') ? 'varchar' : row.type.includes('integer') ? 'int' : row.type,
         length: row.length,
       }));
 
