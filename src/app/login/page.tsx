@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link, IconButton } from "@chakra-ui/react";
-import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link } from "@chakra-ui/react";
 import ParticleEffect from "../../components/particles";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";

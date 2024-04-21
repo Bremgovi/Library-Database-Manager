@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Link, Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, useToast } from "@chakra-ui/react";
+import { Link, Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image } from "@chakra-ui/react";
 import ParticleEffect from "../../components/particles";
 import { useRouter } from "next/navigation";
 import BeatLoader from "react-spinners/BeatLoader";

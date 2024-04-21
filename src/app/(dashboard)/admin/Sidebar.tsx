@@ -5,7 +5,6 @@ import { Sidebar as ProSidebar } from "react-pro-sidebar";
 import { Box, Text, useColorMode, useColorModeValue, ColorModeProvider, Switch, Flex, IconButton, Avatar, AvatarBadge, Icon, Link } from "@chakra-ui/react";
 import { HamburgerIcon, MoonIcon, SunIcon, ViewIcon, InfoIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
-import { color } from "framer-motion";
 
 const Item = ({ title, color, icon, link }: { title: string; color: string; icon: JSX.Element; link: string }) => {
   return (
@@ -20,6 +19,8 @@ const Sidebar = ({ username }: { username: string }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const textColor = useColorModeValue("black", "white");
   const iconColor = useColorModeValue("gray.600", "gray.300");
+  const backgroundColor = useColorModeValue("gray.100", "gray.700");
+  const backgroundHover = useColorModeValue("#CBD5E0", "#4A5568");
   const [typeName, setTypeName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,13 +43,13 @@ const Sidebar = ({ username }: { username: string }) => {
 
   return (
     <ColorModeProvider options={{ initialColorMode: "dark" }}>
-      <Box bg={useColorModeValue("gray.100", "gray.700")} minHeight="100vh">
-        <ProSidebar collapsed={isCollapsed} backgroundColor={useColorModeValue("gray.100", "gray.700")}>
+      <Box bg={backgroundColor} minHeight="100vh">
+        <ProSidebar collapsed={isCollapsed} backgroundColor={backgroundColor}>
           <Menu
             menuItemStyles={{
               button: {
                 "&:hover": {
-                  backgroundColor: useColorModeValue("#CBD5E0", "#4A5568"),
+                  backgroundColor: backgroundHover,
                 },
               },
             }}
