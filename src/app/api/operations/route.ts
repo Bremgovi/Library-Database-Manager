@@ -13,8 +13,10 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    if (table === 'usuarios') {
+    
+    // Rest of your code...
+    
+    if (table === 'usuarios' && data) {
       const { usuario: username, contrasena: password } = data;
       console.log(username, password);
 
@@ -109,16 +111,16 @@ export async function POST(req: Request) {
     }
 
   } catch (e:any) {
-
-    if (e.code === '23503') { // Postgres error code for foreign key violation
+    if (e.message.includes('violates foreign key constraint')) { 
       return NextResponse.json(
-        { message: "Cannot delete the record because it's being used in another table!",
+        { 
+          message: "Cannot delete the record because it's being used in another table!",
           title: "Foreign key violation!"
-         },
+        },
         { status: 400 }
       );
     }
-
+  
     console.error("Error processing request: ", e);
     return NextResponse.json(
       { message: "Something went wrong!" },

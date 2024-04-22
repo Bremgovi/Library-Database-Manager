@@ -20,6 +20,7 @@ import {
   Checkbox,
   RadioGroup,
   Radio,
+  Select,
 } from "@chakra-ui/react";
 
 interface Column {
@@ -29,6 +30,11 @@ interface Column {
   length?: number;
 }
 
+interface RadioColumns {
+  table: string;
+  columns: string[];
+}
+
 interface RowData {
   [key: string]: any;
 }
@@ -36,9 +42,10 @@ interface RowData {
 interface TableProps {
   table: string;
   endpoint: string;
+  radioColumns?: RadioColumns;
 }
 
-const GenericTable = ({ table, endpoint }: TableProps) => {
+const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
@@ -47,13 +54,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const showToast = useCustomToast();
 
-  const handleGenreChange = (genreId: string) => {
-    setRowData({
-      ...rowData,
-      id_genero: parseInt(genreId, 10),
-    });
-  };
-  const [genres, setGenres] = useState<RowData[]>([]);
+  const [radioColumn, setRadioColumn] = useState<RowData[]>([]);
 
   useEffect(() => {
     const fetchTableSchema = async () => {
@@ -78,6 +79,14 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
     const { name, value } = e.target;
 
     const currentColumn = columns.find((column) => column.key === name);
+
+    if (currentColumn && currentColumn.type === "boolean") {
+      setRowData({
+        ...rowData,
+        [name]: value === "Si",
+      });
+      return;
+    }
 
     if (currentColumn && currentColumn.type === "varchar") {
       if (currentColumn.length && value.length > currentColumn.length) {
@@ -144,12 +153,12 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
         fetchData();
       } else {
         const defaultTitle = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Failed`;
-        const defaultMessage = `There was an error ${operation === "delete" ? "deleting" : operation + "ing"} the data.`;
+        const defaultMessage = `There was an error ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.`;
 
         showToast(responseData.title || defaultTitle, responseData.message || defaultMessage, "error");
       }
     } catch (error) {
-      showToast("Error", `An error occurred while ${operation}ing data.`, "error");
+      showToast("Error", `An error occurred while ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.`, "error");
     }
   };
 
@@ -176,12 +185,13 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
       showToast("Error", "An error occurred while fetching data." + error, "error");
     }
   };
-  const fetchGenres = async () => {
+
+  const fetchRadioColumns = async () => {
     try {
-      const response = await fetch(`${endpoint}?table=generos_persona`);
+      const response = await fetch(`${endpoint}?table=${radioColumns?.table}`);
       if (response.ok) {
         const responseData = await response.json();
-        setGenres(responseData.data);
+        setRadioColumn(responseData.data);
       } else {
         showToast("Fetch failed", "Failed to fetch genres from the server.", "error");
       }
@@ -192,7 +202,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
 
   useEffect(() => {
     fetchData();
-    fetchGenres();
+    fetchRadioColumns();
   }, []);
 
   const formatLabel = (label: string): string => {
@@ -207,15 +217,25 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
   };
 
   const renderInput = (column: Column) => {
-    if (column.key === "id_genero") {
+    let labelField = "descripcion"; // Default label field
+
+    if (radioColumns?.columns.includes(column.key)) {
+      if (radioColumn.length > 0) {
+        const firstOption = radioColumn[0];
+        const keys = Object.keys(firstOption);
+        labelField = keys.find((key) => key !== column.key && typeof firstOption[key] === "string") || "descripcion";
+      }
       return (
         <FormControl key={column.key}>
           <Box maxHeight="200px" overflowY="auto">
-            <RadioGroup value={rowData.id_genero ? String(rowData.id_genero) : ""} onChange={(value) => handleGenreChange(value)}>
-              {genres.map((genre) => (
-                <Box key={genre.id_genero}>
-                  <Radio key={genre.id_genero} value={String(genre.id_genero)}>
-                    {genre.descripcion}
+            <RadioGroup
+              value={rowData[column.key] ? String(rowData[column.key]) : ""}
+              onChange={(nextValue: string) => handleChange({ target: { name: column.key, value: nextValue } })}
+            >
+              {radioColumn.map((option) => (
+                <Box key={option[column.key]}>
+                  <Radio key={option[column.key]} value={String(option[column.key])}>
+                    {option[labelField]}
                   </Radio>
                 </Box>
               ))}
@@ -235,6 +255,14 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
           type="date"
           onKeyDown={handleTabPress}
         />
+      );
+    }
+    if (column.type === "boolean") {
+      return (
+        <Select name={column.key} value={rowData[column.key] ? "Si" : "No"} onChange={handleChange}>
+          <option value="Si">Si</option>
+          <option value="No">No</option>
+        </Select>
       );
     }
 
@@ -295,7 +323,7 @@ const GenericTable = ({ table, endpoint }: TableProps) => {
                     bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
                   >
                     {columns.map((column) => (
-                      <Td key={column.key}>{row[column.key]}</Td>
+                      <Td key={column.key}> {column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]}</Td>
                     ))}
                   </Tr>
                 ))
