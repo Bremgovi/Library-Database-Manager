@@ -17,7 +17,6 @@ import {
   Flex,
   Button,
   Box,
-  Checkbox,
   RadioGroup,
   Radio,
   Select,
@@ -30,8 +29,9 @@ interface Column {
   length?: number;
 }
 
-interface RadioColumns {
-  table: string;
+interface IdColumns {
+  foreignTable: string;
+  idColumn: string;
   columns: string[];
 }
 
@@ -42,10 +42,11 @@ interface RowData {
 interface TableProps {
   table: string;
   endpoint: string;
-  radioColumns?: RadioColumns;
+  radioColumns?: IdColumns[];
+  idColumns?: IdColumns[];
 }
 
-const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
+const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
@@ -79,7 +80,6 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
     const { name, value } = e.target;
 
     const currentColumn = columns.find((column) => column.key === name);
-
     if (currentColumn && currentColumn.type === "boolean") {
       setRowData({
         ...rowData,
@@ -102,23 +102,36 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
 
     if (data) {
       const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
-
       if (matchingRow) {
         setPlaceholder(matchingRow);
-        //setSelectedRow(matchingRow);
-        //setRowData(matchingRow);
       }
     }
   };
+
   const handleTabPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Tab") {
       e.preventDefault();
       if (placeholder) {
-        setRowData(placeholder);
-        setSelectedRow(placeholder);
+        const updatedRowData: RowData = {};
+        const updatedSelectedRow: RowData = {};
+
+        for (const key in placeholder) {
+          if (key.startsWith("id_") && typeof placeholder[key] === "string") {
+            const [numericPart, stringPart] = placeholder[key].split(" ", 2);
+            updatedRowData[key] = parseInt(numericPart, 10);
+            updatedSelectedRow[key] = `${numericPart} ${stringPart}`;
+          } else {
+            updatedRowData[key] = placeholder[key];
+            updatedSelectedRow[key] = placeholder[key];
+          }
+        }
+
+        setRowData(updatedRowData);
+        setSelectedRow(updatedSelectedRow);
       }
     }
   };
+
   const handleOperation = async (operation: "insert" | "update" | "delete") => {
     try {
       let requestBody: any = { table: table };
@@ -163,16 +176,32 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
   };
 
   const handleSelectRow = (row: RowData) => {
-    if (selectedRow && JSON.stringify(selectedRow) === JSON.stringify(row)) {
+    const displayedRow: RowData = { ...row };
+
+    for (const key in displayedRow) {
+      if (key.startsWith("id_") && typeof displayedRow[key] === "string") {
+        const numericPart = displayedRow[key].split(" ")[0];
+        displayedRow[key] = parseInt(numericPart, 10);
+      }
+    }
+    if (selectedRow && JSON.stringify(selectedRow) === JSON.stringify(displayedRow)) {
       setSelectedRow(null);
       setRowData({});
     } else {
-      setSelectedRow(row);
-      setRowData(row);
+      setSelectedRow(displayedRow);
+      setRowData(displayedRow);
     }
   };
 
   const fetchData = async () => {
+    if (idColumns) {
+      fetchIdData();
+    } else {
+      fetchNormalData();
+    }
+  };
+
+  const fetchNormalData = async () => {
     try {
       const response = await fetch(`${endpoint}?table=${table}`);
       if (response.ok) {
@@ -186,7 +215,35 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
     }
   };
 
+  const fetchIdData = async () => {
+    if (idColumns) {
+      try {
+        const requestBody = {
+          table: table,
+          idColumns: idColumns,
+        };
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+        if (response.ok) {
+          const responseData = await response.json();
+          setData(responseData.data);
+        } else {
+          console.error(`Failed to fetch id columns`);
+        }
+      } catch (error) {
+        console.error("Some error occurred while fetching id columns data", error);
+      }
+    }
+  };
+
   const fetchRadioColumns = async () => {
+    /*
     try {
       const response = await fetch(`${endpoint}?table=${radioColumns?.table}`);
       if (response.ok) {
@@ -198,6 +255,7 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
     } catch (error) {
       showToast("Error", "An error occurred while fetching genres." + error, "error");
     }
+    */
   };
 
   useEffect(() => {
@@ -219,6 +277,7 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
   const renderInput = (column: Column) => {
     let labelField = "descripcion"; // Default label field
 
+    /*
     if (radioColumns?.columns.includes(column.key)) {
       if (radioColumn.length > 0) {
         const firstOption = radioColumn[0];
@@ -244,7 +303,7 @@ const GenericTable = ({ table, endpoint, radioColumns }: TableProps) => {
         </FormControl>
       );
     }
-
+  */
     if (column.type === "date") {
       return (
         <Input

@@ -2,35 +2,85 @@ import { db } from "@/lib/db";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 
+/* API TO MAKE TABLE OPERATIONS SUCH AS: INSERT, DELETE, UPDATE*/
 export async function POST(req: Request) {
   try {
+
+    /* GET DATA */
     const body = await req.json();
-    console.log(body);
-    const { table, data, condition, deleteCondition } = body;
+    const { table, data, condition, deleteCondition, idColumns, radioColumns } = body;
+    
+    /* IF TABLE DATA IS NOT RECEIVED */
     if (!table) {
       return NextResponse.json(
         { message: "Table name is required!" },
         { status: 400 }
       );
     }
+
+    /* GET DATA FOR RADIO INPUTS */
+    if(radioColumns){
+
+    }
+
+    /* GET DATA FROM ID COLUMNS */
+    if(idColumns){
+      let idColumnsArray = [];
+      const allRows = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}';`);
+      let allColumns = allRows.rows.map((row: { column_name: any; }) => row.column_name); 
+      for (const column of idColumns) {
+        const {foreignTable, idColumn, columns} = column
+        const columnsArray = columns.map((column: string) => column.trim());
+        idColumnsArray.push({foreignTable, idColumn, columns: columnsArray});
+        
+        const index = allColumns.indexOf(column.idColumn);
+        allColumns.splice(index, 1);
+      }
+      allColumns = allColumns.map((column: string) => `${table}.${column}`);
+      let firstColumn = allColumns;
+      allColumns = firstColumn.splice(1)
+      firstColumn = firstColumn.join(', ');
+      allColumns = allColumns.join(', ');
+      const concatExpressions = idColumnsArray.map(({ foreignTable, idColumn, columns }) => {
+        const prefixedColumns = columns.map((column: string) => `${foreignTable}.${column}`).join(', ');
+        return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;
+    }).join(', ');
+
+    const joinConditions = idColumnsArray.map(({ foreignTable, idColumn }) => {
+        return `JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
+    }).join(' ');
     
-    // Rest of your code...
-    
+    const dataQuery = `
+    SELECT 
+        ${firstColumn},
+        ${concatExpressions},
+        ${allColumns}
+    FROM ${table}
+    ${joinConditions};
+    `;
+    const dataResult = await db.query(dataQuery);
+    if (!dataResult.rows.length) {
+      return NextResponse.json({ message: 'No data found for the specified table!' });
+    }else{
+      return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+    }
+    }
+
+
+    /* MANAGE USER PASSWORD */
     if (table === 'usuarios' && data) {
       const { usuario: username, contrasena: password } = data;
-      console.log(username, password);
-
       if (!username || !password) {
         return NextResponse.json(
           { message: "Username and password cannot be empty!" },
           { status: 400 }
         );
       }
-
       const hashedPassword = await hash(password, 10);
       data.contrasena = hashedPassword;
     }
     
+    /* INSERT DATA*/
     if (data && !condition) {
       const columns = Object.keys(data).join(', ');
       const placeholders = Object.keys(data).map((_, index) => `$${index + 1}`).join(', ');
@@ -53,9 +103,9 @@ export async function POST(req: Request) {
         { data: insertedData, message: "Data inserted successfully!" },
         { status: 200 }
       );
-
+    /* UPDATE DATA */
     } else if (data && condition) {
-      const columns = Object.keys(data).join(', ');
+      const columns = Object.keys(data).join(', '); 
       const placeholders = Object.keys(data).map((_, index) => `$${index + 1}`).join(', ');
       const values = Object.values(data);
 
@@ -80,7 +130,7 @@ export async function POST(req: Request) {
         { data: modifiedData, message: "Data modified successfully!" },
         { status: 200 }
       );
-
+    /* DELETE DATA */
     } else if (deleteCondition) {
       const conditionColumns = Object.keys(deleteCondition).map((key, index) => `${key} = $${index + 1}`).join(' AND ');
       const conditionValues = Object.values(deleteCondition);
@@ -131,13 +181,16 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    /* OBTAIN URL VALUES */
     const searchParams = new URL(req.url).searchParams;
     const table = searchParams.get('table');
     const tableSchema = searchParams.get('tableSchema');
+
     if (!table && !tableSchema) {
       return NextResponse.json({ message: 'Table name or table schema is required!' });
     }
 
+    /* OBTAIN COLUMN DATA SUCH AS TYPE AND NAME */
     if (tableSchema) {
       const schemaQuery = `
         SELECT column_name AS key,
@@ -165,16 +218,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ columns, message: 'Table schema retrieved successfully!' });
     }
 
-    const dataQuery = `SELECT * FROM ${table}`;
-    const dataResult = await db.query(dataQuery);
-    if (!dataResult.rows.length) {
-      return NextResponse.json({ message: 'No data found for the specified table!' });
-    }else{
-      return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+    /* OBTAIN TABLE ROWS */
+    if (table) {
+      const dataQuery = `SELECT * FROM ${table}`;
+      const dataResult = await db.query(dataQuery);
+      if (!dataResult.rows.length) {
+        return NextResponse.json({ message: 'No data found for the specified table!' });
+      }else{
+        return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+      }
     }
-
   } catch (error) {
-    console.error('Error processing request: ', error);
-    return NextResponse.json({ message: 'Something went wrong!' });
+    return NextResponse.json({ message: 'Something went wrong! Error: ' + error});
   }
-}
+} 

@@ -6,6 +6,7 @@ import { Box, Text, useColorMode, useColorModeValue, ColorModeProvider, Switch, 
 import { HamburgerIcon, MoonIcon, SunIcon, InfoIcon, SearchIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
 import { signOut } from "next-auth/react";
+import { color } from "framer-motion";
 const Item = ({ title, color, icon, link }: { title: string; color: string; icon: JSX.Element; link: string }) => {
   return (
     <MenuItem component={<Link as={NextLink} href={link} />} icon={icon}>
@@ -123,9 +124,9 @@ const Sidebar = ({ username }: { username: string }) => {
 
             {/* SEARCH INPUT */}
             <Box marginBottom="20px" marginRight="10px">
-              <Flex alignItems="center">
-                <IconButton aria-label="Search" icon={<SearchIcon />} variant="ghost" fontSize="20px" mr="2" />
-                <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <Flex alignItems="center" justifyContent="center">
+                <IconButton aria-label="Search" icon={<SearchIcon color={iconColor} />} variant="ghost" fontSize="20px" mr="2" />
+                {isCollapsed ? null : <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />}
               </Flex>
             </Box>
 
@@ -136,10 +137,10 @@ const Sidebar = ({ username }: { username: string }) => {
               overflowY="auto"
               sx={{
                 "&::-webkit-scrollbar": {
-                  width: "0px", // Remove scrollbar width
-                  background: "transparent", // Set scrollbar background color
+                  width: "0px",
+                  background: "transparent",
                 },
-                overflowY: "scroll", // Ensure overflow is scrollable
+                overflowY: "scroll",
               }}
             >
               {filteredMenuItems.map((item) => (
@@ -164,28 +165,4 @@ const Sidebar = ({ username }: { username: string }) => {
   );
 };
 
-/*
-
- <Item title="Adeudos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/adeudos" />
-              <Item title="Autores" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/autores" />
-              <Item title="Cargos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/cargos" />
-              <Item title="Categorias" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/categorias" />
-              <Item title="Detalles_prestamo" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/detalles_prestamo" />
-              <Item title="Direcciones" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/direcciones" />
-              <Item title="Editoriales" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/editoriales" />
-              <Item title="Empleados" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/empleados" />
-              <Item title="Estados_prestamo" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/estados_prestamo" />
-              <Item title="Generos_literarios" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/generos_literarios" />
-              <Item title="Generos_persona" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/generos_persona" />
-              <Item title="Libros" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/libros" />
-              <Item title="Libros_autores" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/libros_autores" />
-              <Item title="Libros_editoriales" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/libros_editoriales" />
-              <Item title="Libros_generos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/libros_generos" />
-              <Item title="Prestamos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/prestamos" />
-              <Item title="Roles_visitante" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/roles_visitante" />
-              <Item title="Tipos_usuario" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/tipos_usuario" />
-              <Item title="Turnos" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/turnos" />
-              <Item title="Usuarios" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/usuarios" />
-              <Item title="Visitantes" color={textColor} icon={<Icon as={InfoIcon} color={iconColor} />} link="/admin/tables/visitantes" />
-*/
 export default Sidebar;
