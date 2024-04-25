@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { Key, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
+import { Column, RowData, TableProps } from "./data/interfaces";
 import {
   Text,
   Center,
@@ -22,31 +23,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 
-interface Column {
-  key: string;
-  label: string;
-  type: any;
-  length?: number;
-}
-
-interface IdColumns {
-  foreignTable: string;
-  idColumn: string;
-  columns: string[];
-}
-
-interface RowData {
-  [key: string]: any;
-}
-
-interface TableProps {
-  table: string;
-  endpoint: string;
-  radioColumns?: IdColumns[];
-  idColumns?: IdColumns[];
-}
-
-const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) => {
+const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
@@ -55,8 +32,7 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const showToast = useCustomToast();
 
-  const [radioColumn, setRadioColumn] = useState<RowData[]>([]);
-
+  /* FETCH table schema */
   useEffect(() => {
     const fetchTableSchema = async () => {
       try {
@@ -76,6 +52,7 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
     fetchTableSchema();
   }, []);
 
+  /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
     const { name, value } = e.target;
 
@@ -108,6 +85,7 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
     }
   };
 
+  /* Handle autocompletion */
   const handleTabPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Tab") {
       e.preventDefault();
@@ -132,6 +110,7 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
     }
   };
 
+  /* Handle SQL operations */
   const handleOperation = async (operation: "insert" | "update" | "delete") => {
     try {
       let requestBody: any = { table: table };
@@ -175,6 +154,7 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
     }
   };
 
+  /* Handle row selection */
   const handleSelectRow = (row: RowData) => {
     const displayedRow: RowData = { ...row };
 
@@ -193,76 +173,59 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
     }
   };
 
+  /* Handle Data fetching */
   const fetchData = async () => {
+    const fetchNormalData = async () => {
+      try {
+        const response = await fetch(`${endpoint}?table=${table}`);
+        if (response.ok) {
+          const responseData = await response.json();
+          setData(responseData.data);
+        } else {
+          showToast("Fetch failed", "Failed to fetch data from the server.", "error");
+        }
+      } catch (error) {
+        showToast("Error", "An error occurred while fetching data." + error, "error");
+      }
+    };
+
+    const fetchIdData = async () => {
+      if (idColumns) {
+        try {
+          const requestBody = {
+            table: table,
+            idColumns: idColumns,
+          };
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+          if (response.ok) {
+            const responseData = await response.json();
+            setData(responseData.data);
+          } else {
+            console.error(`Failed to fetch id columns`);
+          }
+        } catch (error) {
+          console.error("Some error occurred while fetching id columns data", error);
+        }
+      }
+    };
     if (idColumns) {
       fetchIdData();
     } else {
       fetchNormalData();
     }
   };
-
-  const fetchNormalData = async () => {
-    try {
-      const response = await fetch(`${endpoint}?table=${table}`);
-      if (response.ok) {
-        const responseData = await response.json();
-        setData(responseData.data);
-      } else {
-        showToast("Fetch failed", "Failed to fetch data from the server.", "error");
-      }
-    } catch (error) {
-      showToast("Error", "An error occurred while fetching data." + error, "error");
-    }
-  };
-
-  const fetchIdData = async () => {
-    if (idColumns) {
-      try {
-        const requestBody = {
-          table: table,
-          idColumns: idColumns,
-        };
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
-        if (response.ok) {
-          const responseData = await response.json();
-          setData(responseData.data);
-        } else {
-          console.error(`Failed to fetch id columns`);
-        }
-      } catch (error) {
-        console.error("Some error occurred while fetching id columns data", error);
-      }
-    }
-  };
-
-  const fetchRadioColumns = async () => {
-    /*
-    try {
-      const response = await fetch(`${endpoint}?table=${radioColumns?.table}`);
-      if (response.ok) {
-        const responseData = await response.json();
-        setRadioColumn(responseData.data);
-      } else {
-        showToast("Fetch failed", "Failed to fetch genres from the server.", "error");
-      }
-    } catch (error) {
-      showToast("Error", "An error occurred while fetching genres." + error, "error");
-    }
-    */
-  };
-
   useEffect(() => {
     fetchData();
-    fetchRadioColumns();
   }, []);
 
+  /* Handle Label format */
   const formatLabel = (label: string): string => {
     const replacedLabel = label.replaceAll("ap", "Apellido");
     return replacedLabel
@@ -274,81 +237,43 @@ const GenericTable = ({ table, endpoint, radioColumns, idColumns }: TableProps) 
       .join(" ");
   };
 
+  /* Handle INPUT field rendering */
   const renderInput = (column: Column) => {
-    let labelField = "descripcion"; // Default label field
+    const renderDateInput = (column: Column) => (
+      <Input
+        name={column.key}
+        value={rowData[column.key] || ""}
+        onChange={handleChange}
+        placeholder={`Select ${formatLabel(column.label)}`}
+        type="date"
+        onKeyDown={handleTabPress}
+      />
+    );
+    const renderBooleanInput = (column: Column) => (
+      <Select name={column.key} value={rowData[column.key] ? "Si" : "No"} onChange={handleChange}>
+        <option value="Si">Si</option>
+        <option value="No">No</option>
+      </Select>
+    );
+    const renderDefaultInput = (column: Column) => {
+      const placeholderValue = placeholder && placeholder[column.key] ? placeholder[column.key] : `Enter ${formatLabel(column.label)}`;
+      const inputType = column.type === "int" ? "number" : "text";
 
-    /*
-    if (radioColumns?.columns.includes(column.key)) {
-      if (radioColumn.length > 0) {
-        const firstOption = radioColumn[0];
-        const keys = Object.keys(firstOption);
-        labelField = keys.find((key) => key !== column.key && typeof firstOption[key] === "string") || "descripcion";
-      }
-      return (
-        <FormControl key={column.key}>
-          <Box maxHeight="200px" overflowY="auto">
-            <RadioGroup
-              value={rowData[column.key] ? String(rowData[column.key]) : ""}
-              onChange={(nextValue: string) => handleChange({ target: { name: column.key, value: nextValue } })}
-            >
-              {radioColumn.map((option) => (
-                <Box key={option[column.key]}>
-                  <Radio key={option[column.key]} value={String(option[column.key])}>
-                    {option[labelField]}
-                  </Radio>
-                </Box>
-              ))}
-            </RadioGroup>
-          </Box>
-        </FormControl>
-      );
-    }
-  */
+      return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} />;
+    };
+
     if (column.type === "date") {
-      return (
-        <Input
-          name={column.key}
-          value={rowData[column.key] || ""}
-          onChange={handleChange}
-          placeholder={`Select ${formatLabel(column.label)}`}
-          type="date"
-          onKeyDown={handleTabPress}
-        />
-      );
-    }
-    if (column.type === "boolean") {
-      return (
-        <Select name={column.key} value={rowData[column.key] ? "Si" : "No"} onChange={handleChange}>
-          <option value="Si">Si</option>
-          <option value="No">No</option>
-        </Select>
-      );
+      return renderDateInput(column);
     }
 
-    if (placeholder && placeholder[column.key]) {
-      return (
-        <Input
-          name={column.key}
-          value={rowData[column.key] || ""}
-          onChange={handleChange}
-          placeholder={placeholder[column.key]}
-          type={column.type === "int" ? "number" : "text"}
-          onKeyDown={handleTabPress}
-        />
-      );
-    } else {
-      return (
-        <Input
-          name={column.key}
-          value={rowData[column.key] || ""}
-          onChange={handleChange}
-          placeholder={`Enter ${formatLabel(column.label)}`}
-          type={column.type === "int" ? "number" : "text"}
-        />
-      );
+    if (column.type === "boolean") {
+      return renderBooleanInput(column);
     }
+
+    return renderDefaultInput(column);
   };
 
+  /* Handle table view and design */
   return (
     <Center height="100%">
       <Stack spacing={4} width="80%">

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     /* GET DATA */
     const body = await req.json();
-    const { table, data, condition, deleteCondition, idColumns, radioColumns } = body;
+    const { table, data, condition, deleteCondition, idColumns, radioColumn } = body;
     
     /* IF TABLE DATA IS NOT RECEIVED */
     if (!table) {
@@ -19,9 +19,19 @@ export async function POST(req: Request) {
     }
 
     /* GET DATA FOR RADIO INPUTS */
-    if(radioColumns){
-
+   
+    if(radioColumn){
+        const {foreignTable, idColumn, columns} = radioColumn;
+        const columnsArray = columns.map((column: string) => column.trim());
+        const dataQuery = `SELECT ${columnsArray.join(', ')} FROM ${foreignTable}`;
+        const dataResult = await db.query(dataQuery);
+        if (!dataResult.rows) {
+          return NextResponse.json({ message: 'No data found for the specified table!' });
+        }else{
+          return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+        }
     }
+    
 
     /* GET DATA FROM ID COLUMNS */
     if(idColumns){
@@ -43,27 +53,26 @@ export async function POST(req: Request) {
       allColumns = allColumns.join(', ');
       const concatExpressions = idColumnsArray.map(({ foreignTable, idColumn, columns }) => {
         const prefixedColumns = columns.map((column: string) => `${foreignTable}.${column}`).join(', ');
-        return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;
-    }).join(', ');
+        return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;}).join(', ');
 
-    const joinConditions = idColumnsArray.map(({ foreignTable, idColumn }) => {
-        return `JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
-    }).join(' ');
-    
-    const dataQuery = `
-    SELECT 
-        ${firstColumn},
-        ${concatExpressions},
-        ${allColumns}
-    FROM ${table}
-    ${joinConditions};
-    `;
-    const dataResult = await db.query(dataQuery);
-    if (!dataResult.rows.length) {
-      return NextResponse.json({ message: 'No data found for the specified table!' });
-    }else{
-      return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
-    }
+      const joinConditions = idColumnsArray.map(({ foreignTable, idColumn }) => {
+          return `JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
+      }).join(' ');
+      
+      const dataQuery = `
+      SELECT 
+          ${firstColumn},
+          ${concatExpressions},
+          ${allColumns}
+      FROM ${table}
+      ${joinConditions};
+      `;
+      const dataResult = await db.query(dataQuery);
+      if (!dataResult.rows.length) {
+        return NextResponse.json({ message: 'No data found for the specified table!' });
+      }else{
+        return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
+      }
     }
 
 
