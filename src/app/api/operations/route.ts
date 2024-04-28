@@ -5,33 +5,26 @@ import { NextResponse } from "next/server";
 /* API TO MAKE TABLE OPERATIONS SUCH AS: INSERT, DELETE, UPDATE*/
 export async function POST(req: Request) {
   try {
-
     /* GET DATA */
     const body = await req.json();
     const { table, data, condition, deleteCondition, idColumns, radioColumn } = body;
-    
-    /* IF TABLE DATA IS NOT RECEIVED */
-    if (!table) {
+    /* VALIDATIONS */
+    if (!table && !radioColumn) {
       return NextResponse.json(
         { message: "Table name is required!" },
         { status: 400 }
       );
     }
 
-    /* GET DATA FOR RADIO INPUTS */
-   
-    if(radioColumn){
-        const {foreignTable, idColumn, columns} = radioColumn;
-        const columnsArray = columns.map((column: string) => column.trim());
-        const dataQuery = `SELECT ${columnsArray.join(', ')} FROM ${foreignTable}`;
-        const dataResult = await db.query(dataQuery);
-        if (!dataResult.rows) {
-          return NextResponse.json({ message: 'No data found for the specified table!' });
-        }else{
-          return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
-        }
+    if (radioColumn){
+      const { foreignTable, idColumn, descriptionColumn } = radioColumn;
+      const query = `SELECT ${idColumn}, ${descriptionColumn} FROM ${foreignTable}`;
+      const result = await db.query(query);
+      if (!result.rows.length) {
+        return NextResponse.json({ message: 'No data found for the specified table!' });
+      }
+      return NextResponse.json({ data: result.rows, message: 'Data retrieved successfully!' });
     }
-    
 
     /* GET DATA FROM ID COLUMNS */
     if(idColumns){
@@ -75,7 +68,6 @@ export async function POST(req: Request) {
       }
     }
 
-
     /* MANAGE USER PASSWORD */
     if (table === 'usuarios' && data) {
       const { usuario: username, contrasena: password } = data;
@@ -113,7 +105,9 @@ export async function POST(req: Request) {
         { status: 200 }
       );
     /* UPDATE DATA */
-    } else if (data && condition) {
+    } 
+    /* UPDATE DATA*/
+    else if (data && condition) {
       const columns = Object.keys(data).join(', '); 
       const placeholders = Object.keys(data).map((_, index) => `$${index + 1}`).join(', ');
       const values = Object.values(data);
@@ -140,7 +134,9 @@ export async function POST(req: Request) {
         { status: 200 }
       );
     /* DELETE DATA */
-    } else if (deleteCondition) {
+    } 
+    /* DELETE DATA*/
+    else if (deleteCondition) {
       const conditionColumns = Object.keys(deleteCondition).map((key, index) => `${key} = $${index + 1}`).join(' AND ');
       const conditionValues = Object.values(deleteCondition);
       
@@ -168,7 +164,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
+  
+  /* EXCEPTION HANDLING */
   } catch (e:any) {
     if (e.message.includes('violates foreign key constraint')) { 
       return NextResponse.json(
@@ -194,12 +191,13 @@ export async function GET(req: Request) {
     const searchParams = new URL(req.url).searchParams;
     const table = searchParams.get('table');
     const tableSchema = searchParams.get('tableSchema');
-
+    
+    /* VALIDATIONS */
     if (!table && !tableSchema) {
       return NextResponse.json({ message: 'Table name or table schema is required!' });
     }
 
-    /* OBTAIN COLUMN DATA SUCH AS TYPE AND NAME */
+    /* OBTAIN TABLE SCHEMA */
     if (tableSchema) {
       const schemaQuery = `
         SELECT column_name AS key,
@@ -237,6 +235,8 @@ export async function GET(req: Request) {
         return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
       }
     }
+
+  /* EXCEPTION HANDLING */
   } catch (error) {
     return NextResponse.json({ message: 'Something went wrong! Error: ' + error});
   }

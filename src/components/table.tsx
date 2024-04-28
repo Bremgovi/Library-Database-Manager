@@ -1,4 +1,4 @@
-import { Key, useEffect, useState } from "react";
+import { Key, use, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
 import { Column, RowData, TableProps } from "./data/interfaces";
 import {
@@ -18,18 +18,22 @@ import {
   Flex,
   Button,
   Box,
+  Select,
+  Tooltip,
   RadioGroup,
   Radio,
-  Select,
 } from "@chakra-ui/react";
+import { fetchData } from "next-auth/client/_utils";
 
-const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
+const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
   const [columns, setColumns] = useState<Column[]>([]);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
+  const [radioData, setRadioData] = useState<{ [key: string]: RowData[] }>({});
+
   const showToast = useCustomToast();
 
   /* FETCH table schema */
@@ -52,6 +56,94 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
     fetchTableSchema();
   }, []);
 
+  /* Handle Data fetching */
+  const fetchData = async () => {
+    const fetchNormalData = async () => {
+      try {
+        const response = await fetch(`${endpoint}?table=${table}`);
+        if (response.ok) {
+          const responseData = await response.json();
+          setData(responseData.data);
+        } else {
+          showToast("Fetch failed", "Failed to fetch data from the server.", "error");
+        }
+      } catch (error) {
+        showToast("Error", "An error occurred while fetching data." + error, "error");
+      }
+    };
+
+    const fetchIdData = async () => {
+      if (idColumns) {
+        try {
+          const requestBody = {
+            table: table,
+            idColumns: idColumns,
+          };
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+          if (response.ok) {
+            const responseData = await response.json();
+            setData(responseData.data);
+          } else {
+            console.error(`Failed to fetch id columns`);
+          }
+        } catch (error) {
+          console.error("Some error occurred while fetching id columns data", error);
+        }
+      }
+    };
+
+    if (idColumns) {
+      fetchIdData();
+    } else {
+      fetchNormalData();
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchRadioData = async () => {
+      if (radioColumns) {
+        try {
+          const radioDataToUpdate: { [key: string]: { id: any; description: string }[] } = {}; // Initialize radioDataToUpdate object
+          for (const radioColumn of radioColumns) {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ radioColumn }),
+            });
+            if (response.ok) {
+              const responseData = await response.json();
+              // Map the data to include both ID and description
+              const updatedData = responseData.data.map((item: any) => ({
+                id: item[radioColumn.idColumn], // Assuming radioColumn.idColumn is the column name for ID
+                description: item[radioColumn.descriptionColumn], // Assuming radioColumn.descriptionColumn is the column name for description
+              }));
+              radioDataToUpdate[radioColumn.idColumn] = updatedData; // Store the updated data in the radioDataToUpdate object
+            } else {
+              console.error(`Failed to fetch radio columns`);
+            }
+          }
+          setRadioData((prevRadioData) => ({ ...prevRadioData, ...radioDataToUpdate })); // Update the radioData state with new data
+        } catch (error) {
+          console.error("Some error occurred while fetching radio columns data", error);
+        }
+      }
+    };
+
+    fetchRadioData();
+  }, []);
+
   /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
     const { name, value } = e.target;
@@ -63,6 +155,19 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
         [name]: value === "Si",
       });
       return;
+    }
+
+    if (radioColumns) {
+      for (const radioColumn of radioColumns) {
+        if (radioColumn.idColumn === name) {
+          console.log(value);
+          setRowData({
+            ...rowData,
+            [name]: value,
+          });
+          return;
+        }
+      }
     }
 
     if (currentColumn && currentColumn.type === "varchar") {
@@ -173,58 +278,6 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
     }
   };
 
-  /* Handle Data fetching */
-  const fetchData = async () => {
-    const fetchNormalData = async () => {
-      try {
-        const response = await fetch(`${endpoint}?table=${table}`);
-        if (response.ok) {
-          const responseData = await response.json();
-          setData(responseData.data);
-        } else {
-          showToast("Fetch failed", "Failed to fetch data from the server.", "error");
-        }
-      } catch (error) {
-        showToast("Error", "An error occurred while fetching data." + error, "error");
-      }
-    };
-
-    const fetchIdData = async () => {
-      if (idColumns) {
-        try {
-          const requestBody = {
-            table: table,
-            idColumns: idColumns,
-          };
-
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-          });
-          if (response.ok) {
-            const responseData = await response.json();
-            setData(responseData.data);
-          } else {
-            console.error(`Failed to fetch id columns`);
-          }
-        } catch (error) {
-          console.error("Some error occurred while fetching id columns data", error);
-        }
-      }
-    };
-    if (idColumns) {
-      fetchIdData();
-    } else {
-      fetchNormalData();
-    }
-  };
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   /* Handle Label format */
   const formatLabel = (label: string): string => {
     const replacedLabel = label.replaceAll("ap", "Apellido");
@@ -239,6 +292,26 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
 
   /* Handle INPUT field rendering */
   const renderInput = (column: Column) => {
+    const renderRadioInput = (column: Column) => {
+      return (
+        <RadioGroup
+          name={column.key}
+          onChange={(nextValue: string) => handleChange({ target: { name: column.key, value: nextValue } })}
+          value={String(rowData[column.key] || "")} // Ensure the value is converted to string for comparison
+        >
+          <Stack direction="row">
+            {radioData[column.key] &&
+              radioData[column.key].map((option: any, index: any) => (
+                <Radio key={index} value={String(option.id)}>
+                  {" "}
+                  {option.description}
+                </Radio>
+              ))}
+          </Stack>
+        </RadioGroup>
+      );
+    };
+
     const renderDateInput = (column: Column) => (
       <Input
         name={column.key}
@@ -268,6 +341,14 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
 
     if (column.type === "boolean") {
       return renderBooleanInput(column);
+    }
+
+    if (radioColumns) {
+      for (const radioColumn of radioColumns) {
+        if (radioColumn.idColumn === column.key) {
+          return renderRadioInput(column);
+        }
+      }
     }
 
     return renderDefaultInput(column);
@@ -307,7 +388,13 @@ const GenericTable = ({ table, endpoint, idColumns }: TableProps) => {
                     bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
                   >
                     {columns.map((column) => (
-                      <Td key={column.key}> {column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]}</Td>
+                      <Td key={column.key} whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxWidth="250px">
+                        <Tooltip label={column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]} placement="top">
+                          <div style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+                            {column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]}
+                          </div>
+                        </Tooltip>
+                      </Td>
                     ))}
                   </Tr>
                 ))
