@@ -23,7 +23,6 @@ import {
   RadioGroup,
   Radio,
 } from "@chakra-ui/react";
-import { fetchData } from "next-auth/client/_utils";
 
 const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
@@ -357,11 +356,11 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   /* Handle table view and design */
   return (
     <Center height="100%">
-      <Stack spacing={4} width="80%">
+      <Stack spacing={4} maxWidth="70%">
         <Text fontSize="6xl" textAlign="center">
           Modify {table}
         </Text>
-        <Box maxHeight="400px" overflowY="auto">
+        <Box maxHeight="400px" overflowY="auto" padding="30px">
           {columns.map((column) => (
             <FormControl key={column.key}>
               <FormLabel>{formatLabel(column.label)}</FormLabel>
@@ -369,12 +368,14 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             </FormControl>
           ))}
         </Box>
-        <Box maxH="200px" overflowY="auto">
+        <Box maxH="200px" overflowY="auto" borderRadius="10px" backgroundColor="rgba(255, 255, 255, 0.037)">
           <Table variant="simple">
-            <Thead>
+            <Thead backgroundColor="rgba(255, 255, 255, 0.037)">
               <Tr>
                 {columns.map((column) => (
-                  <Th key={column.key}>{column.label}</Th>
+                  <Th key={column.key} textAlign="center">
+                    {column.label}
+                  </Th>
                 ))}
               </Tr>
             </Thead>
@@ -408,7 +409,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             </Tbody>
           </Table>
         </Box>
-        <Flex justifyContent="center" gap={40}>
+        <Flex justifyContent="center" gap={40} marginTop="20px">
           <Button onClick={() => handleOperation("insert")} colorScheme="green">
             Insert
           </Button>
