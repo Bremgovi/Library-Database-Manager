@@ -45,8 +45,9 @@ export async function POST(req: Request) {
       firstColumn = firstColumn.join(', ');
       allColumns = allColumns.join(', ');
       const concatExpressions = idColumnsArray.map(({ foreignTable, idColumn, columns }) => {
-        const prefixedColumns = columns.map((column: string) => `${foreignTable}.${column}`).join(', ');
-        return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;}).join(', ');
+        const prefixedColumns = `CONCAT_WS(' ', ${columns.map((column: string) => `${foreignTable}.${column}`).join(', ')})`;
+        return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;
+      }).join(', ');
 
       const joinConditions = idColumnsArray.map(({ foreignTable, idColumn }) => {
           return `JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;

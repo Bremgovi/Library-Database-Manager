@@ -123,17 +123,16 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             });
             if (response.ok) {
               const responseData = await response.json();
-              // Map the data to include both ID and description
               const updatedData = responseData.data.map((item: any) => ({
-                id: item[radioColumn.idColumn], // Assuming radioColumn.idColumn is the column name for ID
-                description: item[radioColumn.descriptionColumn], // Assuming radioColumn.descriptionColumn is the column name for description
+                id: item[radioColumn.idColumn],
+                description: item[radioColumn.descriptionColumn],
               }));
-              radioDataToUpdate[radioColumn.idColumn] = updatedData; // Store the updated data in the radioDataToUpdate object
+              radioDataToUpdate[radioColumn.idColumn] = updatedData;
             } else {
               console.error(`Failed to fetch radio columns`);
             }
           }
-          setRadioData((prevRadioData) => ({ ...prevRadioData, ...radioDataToUpdate })); // Update the radioData state with new data
+          setRadioData((prevRadioData) => ({ ...prevRadioData, ...radioDataToUpdate }));
         } catch (error) {
           console.error("Some error occurred while fetching radio columns data", error);
         }
@@ -159,7 +158,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     if (radioColumns) {
       for (const radioColumn of radioColumns) {
         if (radioColumn.idColumn === name) {
-          console.log(value);
           setRowData({
             ...rowData,
             [name]: value,
@@ -329,7 +327,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     );
     const renderDefaultInput = (column: Column) => {
       const placeholderValue = placeholder && placeholder[column.key] ? placeholder[column.key] : `Enter ${formatLabel(column.label)}`;
-      const inputType = column.type === "int" ? "number" : "text";
+      const inputType = column.type === "int" ? (column.key === firstColumnName ? "number" : column.key.includes("id") ? "text" : "number") : "text";
 
       return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} />;
     };
