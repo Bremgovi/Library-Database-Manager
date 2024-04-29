@@ -113,7 +113,6 @@ export async function POST(req: Request) {
         { data: insertedData, message: "Data inserted successfully!" },
         { status: 200 }
       );
-    /* UPDATE DATA */
     } 
     /* UPDATE DATA*/
     else if (data && condition) {
@@ -142,15 +141,18 @@ export async function POST(req: Request) {
         { data: modifiedData, message: "Data modified successfully!" },
         { status: 200 }
       );
-    /* DELETE DATA */
     } 
+
     /* DELETE DATA*/
     else if (deleteCondition) {
-      const conditionColumns = Object.keys(deleteCondition).map((key, index) => `${key} = $${index + 1}`).join(' AND ');
-      const conditionValues = Object.values(deleteCondition);
-      
+      const conditionColumns = Object.keys(deleteCondition).map((key, index) => {
+        const values = deleteCondition[key];
+        const placeholders = values.map((_:any, idx:any) => `$${index * values.length + idx + 1}`).join(', ');
+        return `${key} IN (${placeholders})`;
+      }).join(' OR ');
+      const conditionValues = Object.values(deleteCondition).flat();
       const query = `DELETE FROM ${table} WHERE ${conditionColumns} RETURNING *`;
-
+      console.log(query); 
       const result = await db.query(query, conditionValues);
 
       if (!result.rows.length) {
@@ -160,7 +162,7 @@ export async function POST(req: Request) {
         );
       }
 
-      const deletedData = result.rows[0];
+      const deletedData = result.rows;
 
       return NextResponse.json(
         { data: deletedData, message: "Data deleted successfully!" },

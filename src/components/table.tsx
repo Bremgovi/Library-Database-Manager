@@ -30,6 +30,8 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [rowData, setRowData] = useState<RowData>({});
   const [columns, setColumns] = useState<Column[]>([]);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
+  /**/ const [selectedRows, setSelectedRows] = useState<RowData[]>([]);
+  /**/ const [ctrlPressed, setCtrlPressed] = useState(false);
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const [radioData, setRadioData] = useState<{ [key: string]: RowData[] }>({});
   const [idData, setIdData] = useState<String[]>([]);
@@ -162,7 +164,30 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   useEffect(() => {
     console.log("ID DATA: " + idData);
     console.log("DATA: " + data.map((row) => JSON.stringify(row)));
-  }, [idData, data]);
+  }, [idData, data, ctrlPressed]);
+
+  /* KEY listener*/
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        setCtrlPressed(true);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        setCtrlPressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   const removeIntegersFromFields = (row: RowData, fieldsToTransform: string[]): RowData => {
     const transformedRow: RowData = { ...row };
@@ -269,7 +294,8 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
           requestBody.condition = { [firstColumnName]: selectedRow![firstColumnName] };
           break;
         case "delete":
-          requestBody.deleteCondition = { [firstColumnName]: selectedRow![firstColumnName] };
+          //requestBody.deleteCondition = { [firstColumnName]: selectedRow![firstColumnName] };
+          requestBody.deleteCondition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName]) };
           break;
         default:
           throw new Error("Invalid operation type");
@@ -301,7 +327,9 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
 
   /* Handle row selection */
   const handleSelectRow = (row: RowData) => {
+    /**/
     const displayedRow: RowData = { ...row };
+    const isRowSelected = selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]);
 
     for (const key in displayedRow) {
       if (key.startsWith("id_") && typeof displayedRow[key] === "string") {
@@ -309,6 +337,13 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         displayedRow[key] = parseInt(numericPart, 10);
       }
     }
+
+    if (isRowSelected) {
+      setSelectedRows(selectedRows.filter((selectedRow) => selectedRow[firstColumnName] !== row[firstColumnName]));
+    } else {
+      setSelectedRows([...selectedRows, row]);
+    }
+
     if (selectedRow && JSON.stringify(selectedRow) === JSON.stringify(displayedRow)) {
       setSelectedRow(null);
       setRowData({});
@@ -427,7 +462,8 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
                     key={row.id}
                     onClick={() => handleSelectRow(row)}
                     _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
-                    bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
+                    //bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
+                    bg={selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]) ? useColorModeValue("blue.200", "blue.800") : ""}
                   >
                     {columns.map((column) => (
                       <Td key={column.key} whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxWidth="250px">
