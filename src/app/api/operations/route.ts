@@ -29,6 +29,8 @@ export async function POST(req: Request) {
     /* GET DATA FROM ID COLUMNS */
     if(idColumns){
       let idColumnsArray = [];
+      let idColumnsName = "";
+      let foreignTableName = "";
       const allRows = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}';`);
       let allColumns = allRows.rows.map((row: { column_name: any; }) => row.column_name); 
       for (const column of idColumns) {
@@ -46,6 +48,8 @@ export async function POST(req: Request) {
       allColumns = allColumns.join(', ');
       const concatExpressions = idColumnsArray.map(({ foreignTable, idColumn, columns }) => {
         const prefixedColumns = `CONCAT_WS(' ', ${columns.map((column: string) => `${foreignTable}.${column}`).join(', ')})`;
+        idColumnsName = columns.map((column: string) => `${foreignTable}.${column}`).join(', ');
+        foreignTableName = foreignTable;
         return `CONCAT(${table}.${idColumn}, ' ', ${prefixedColumns}) as ${idColumn}`;
       }).join(', ');
 
@@ -61,12 +65,16 @@ export async function POST(req: Request) {
       FROM ${table}
       ${joinConditions};
       `;
+      
+      const idColumnsQuery = `SELECT ${idColumnsName} from ${foreignTableName}`;
+      const idColumnsResult = await db.query(idColumnsQuery);
+      
       const dataResult = await db.query(dataQuery);
       if (!dataResult.rows.length) {
         return NextResponse.json({ message: 'No data found for the specified table!' });
       }else{
-        return NextResponse.json({ data: dataResult.rows, message: 'Data retrieved successfully!' });
-      }
+        return NextResponse.json({ idData: idColumnsResult.rows, data: dataResult.rows, message: 'Data retrieved successfully!' });
+      } 
     }
 
     /* MANAGE USER PASSWORD */

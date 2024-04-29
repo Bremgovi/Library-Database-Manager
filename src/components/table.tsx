@@ -32,7 +32,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const [radioData, setRadioData] = useState<{ [key: string]: RowData[] }>({});
-
+  const [idData, setIdData] = useState<String[]>([]);
   const showToast = useCustomToast();
 
   /* FETCH table schema */
@@ -89,6 +89,12 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
           if (response.ok) {
             const responseData = await response.json();
             setData(responseData.data);
+            for (const element of responseData.idData) {
+              const concatenatedValue = Object.values(element)
+                .reduce((acc: string, value) => acc + " " + value, "")
+                .trim();
+              setIdData((prevArray) => [...prevArray, concatenatedValue]);
+            }
           } else {
             console.error(`Failed to fetch id columns`);
           }
@@ -108,6 +114,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     fetchData();
   }, []);
 
+  /* Fetch Radio Columns data*/
   useEffect(() => {
     const fetchRadioData = async () => {
       if (radioColumns) {
@@ -141,6 +148,33 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
 
     fetchRadioData();
   }, []);
+
+  /**/
+  useEffect(() => {
+    const fetchIdData = () => {
+      if (idData) {
+      }
+    };
+    fetchIdData();
+  }, []);
+
+  /* DEBUG DATA VALUES */
+  useEffect(() => {
+    console.log("ID DATA: " + idData);
+    console.log("DATA: " + data.map((row) => JSON.stringify(row)));
+  }, [idData, data]);
+
+  const removeIntegersFromFields = (row: RowData, fieldsToTransform: string[]): RowData => {
+    const transformedRow: RowData = { ...row };
+
+    fieldsToTransform.forEach((field) => {
+      if (typeof transformedRow[field] === "string") {
+        transformedRow[field] = transformedRow[field].replace(/[0-9]/g, "");
+        transformedRow[field] = transformedRow[field].trimStart();
+      }
+    });
+    return transformedRow;
+  };
 
   /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
@@ -180,7 +214,16 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     });
 
     if (data) {
-      const matchingRow = data.find((row) => String(row[name]).toLowerCase() === String(value).toLowerCase());
+      const userInput = value.toLowerCase();
+
+      let matchingRow;
+      if (idData) {
+        let idColumnsArray = idColumns?.map((idColumn) => idColumn.idColumn) || [];
+        const transformedData = data.map((row) => removeIntegersFromFields(row, idColumnsArray));
+        matchingRow = transformedData.find((row) => String(row[name]).toLowerCase() === userInput);
+      } else {
+        matchingRow = data.find((row) => String(row[name]).toLowerCase() === userInput);
+      }
       if (matchingRow) {
         setPlaceholder(matchingRow);
       }
