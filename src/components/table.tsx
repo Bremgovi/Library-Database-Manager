@@ -1,4 +1,4 @@
-import { Key, use, useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
 import { Column, RowData, TableProps } from "./data/interfaces";
 import {
@@ -22,7 +22,9 @@ import {
   Tooltip,
   RadioGroup,
   Radio,
+  IconButton,
 } from "@chakra-ui/react";
+import { SearchIcon } from "@chakra-ui/icons";
 
 const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
@@ -30,12 +32,39 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [rowData, setRowData] = useState<RowData>({});
   const [columns, setColumns] = useState<Column[]>([]);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
-  /**/ const [selectedRows, setSelectedRows] = useState<RowData[]>([]);
-  /**/ const [ctrlPressed, setCtrlPressed] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<RowData[]>([]);
+  const [idValue, setIdValue] = useState<String>("");
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
   const [radioData, setRadioData] = useState<{ [key: string]: RowData[] }>({});
   const [idData, setIdData] = useState<String[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const showToast = useCustomToast();
+
+  // Colors
+  const iconColor = useColorModeValue("gray.600", "gray.300");
+  const backgroundColor = useColorModeValue("rgba(0, 0, 0, 0.037)", "rgba(255, 255, 255, 0.037)");
+  const header = useColorModeValue("rgba(0, 0, 0, 0.037)", "rgba(255, 255, 255, 0.037)");
+
+  // Function to update search query state
+  const handleSearchInputChange = (e: { target: { value: SetStateAction<string> } }) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filtered data based on search query
+  const filteredData = data.filter((row) =>
+    Object.values(row).some((value) => {
+      if (value !== null && value !== undefined) {
+        try {
+          return value.toString().toLowerCase().includes(searchQuery.toLowerCase());
+        } catch (error) {
+          console.error("Error while converting value to string:", error);
+          console.log("Problematic value:", value);
+          return false;
+        }
+      }
+      return false;
+    })
+  );
 
   /* FETCH table schema */
   useEffect(() => {
@@ -160,50 +189,22 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     fetchIdData();
   }, []);
 
-  /* DEBUG DATA VALUES */
-  useEffect(() => {
-    console.log("ID DATA: " + idData);
-    console.log("DATA: " + data.map((row) => JSON.stringify(row)));
-  }, [idData, data, ctrlPressed]);
-
-  /* KEY listener*/
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        setCtrlPressed(true);
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        setCtrlPressed(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
-
   const removeIntegersFromFields = (row: RowData, fieldsToTransform: string[]): RowData => {
     const transformedRow: RowData = { ...row };
-
+    let id = "";
     fieldsToTransform.forEach((field) => {
       if (typeof transformedRow[field] === "string") {
+        id = transformedRow[field].replace(/(^\d+)(.+$)/i, "$1");
         transformedRow[field] = transformedRow[field].replace(/[0-9]/g, "");
         transformedRow[field] = transformedRow[field].trimStart();
       }
     });
-    return transformedRow;
+    return { idValue: id, data: transformedRow };
   };
 
   /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
 
     const currentColumn = columns.find((column) => column.key === name);
     if (currentColumn && currentColumn.type === "boolean") {
@@ -242,21 +243,32 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
       const userInput = value.toLowerCase();
 
       let matchingRow;
+      var idValue;
+      var index = -1;
       if (idData) {
         let idColumnsArray = idColumns?.map((idColumn) => idColumn.idColumn) || [];
-        const transformedData = data.map((row) => removeIntegersFromFields(row, idColumnsArray));
+        const transformedData = data.map((row) => removeIntegersFromFields(row, idColumnsArray).data);
+        idValue = data.map((row) => removeIntegersFromFields(row, idColumnsArray).idValue);
+        index = transformedData.findIndex((row) => String(row[name]).toLowerCase() === userInput);
         matchingRow = transformedData.find((row) => String(row[name]).toLowerCase() === userInput);
       } else {
         matchingRow = data.find((row) => String(row[name]).toLowerCase() === userInput);
       }
+
       if (matchingRow) {
+        if (idValue && index !== -1) {
+          setIdValue(idValue[index]);
+        }
         setPlaceholder(matchingRow);
+        return;
       }
     }
   };
 
   /* Handle autocompletion */
   const handleTabPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    let idColumnsArray = idColumns?.map((idColumn) => idColumn.idColumn) || [];
+
     if (e.key === "Tab") {
       e.preventDefault();
       if (placeholder) {
@@ -266,8 +278,15 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         for (const key in placeholder) {
           if (key.startsWith("id_") && typeof placeholder[key] === "string") {
             const [numericPart, stringPart] = placeholder[key].split(" ", 2);
-            updatedRowData[key] = parseInt(numericPart, 10);
-            updatedSelectedRow[key] = `${numericPart} ${stringPart}`;
+
+            if (idColumnsArray.includes(key)) {
+              console.log("hola");
+              updatedRowData[key] = idValue;
+              updatedSelectedRow[key] = idValue;
+            } else {
+              updatedRowData[key] = parseInt(numericPart);
+              updatedSelectedRow[key] = `${numericPart} ${stringPart}`;
+            }
           } else {
             updatedRowData[key] = placeholder[key];
             updatedSelectedRow[key] = placeholder[key];
@@ -275,7 +294,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         }
 
         setRowData(updatedRowData);
-        setSelectedRow(updatedSelectedRow);
+        setSelectedRows([...selectedRows, updatedSelectedRow]);
       }
     }
   };
@@ -291,16 +310,16 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
           break;
         case "update":
           requestBody.data = rowData;
-          requestBody.condition = { [firstColumnName]: selectedRow![firstColumnName] };
+          requestBody.condition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName])[0] };
           break;
         case "delete":
-          //requestBody.deleteCondition = { [firstColumnName]: selectedRow![firstColumnName] };
           requestBody.deleteCondition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName]) };
           break;
         default:
           throw new Error("Invalid operation type");
       }
 
+      console.log(requestBody);
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -321,18 +340,18 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         showToast(responseData.title || defaultTitle, responseData.message || defaultMessage, "error");
       }
     } catch (error) {
-      showToast("Error", `An error occurred while ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.`, "error");
+      showToast("Error", `An error occurred while ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.` + error, "error");
     }
   };
 
   /* Handle row selection */
   const handleSelectRow = (row: RowData) => {
-    /**/
     const displayedRow: RowData = { ...row };
     const isRowSelected = selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]);
 
     for (const key in displayedRow) {
-      if (key.startsWith("id_") && typeof displayedRow[key] === "string") {
+      let idColumnsArray = idColumns?.map((idColumn) => idColumn.idColumn) || [];
+      if (idColumnsArray?.includes(key) && typeof displayedRow[key] === "string") {
         const numericPart = displayedRow[key].split(" ")[0];
         displayedRow[key] = parseInt(numericPart, 10);
       }
@@ -436,7 +455,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         <Text fontSize="6xl" textAlign="center">
           Modify {table}
         </Text>
-        <Box maxHeight="400px" overflowY="auto" padding="30px">
+        <Box maxHeight="300px" overflowY="auto" padding="30px" paddingTop="0px">
           {columns.map((column) => (
             <FormControl key={column.key}>
               <FormLabel>{formatLabel(column.label)}</FormLabel>
@@ -444,9 +463,14 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             </FormControl>
           ))}
         </Box>
-        <Box maxH="200px" overflowY="auto" borderRadius="10px" backgroundColor="rgba(255, 255, 255, 0.037)">
+        {/* Search input field */}
+        <Flex>
+          <IconButton aria-label="Search" icon={<SearchIcon color={iconColor} />} variant="ghost" fontSize="20px" mr="2" />
+          <Input value={searchQuery} onChange={handleSearchInputChange} placeholder="Search..." backgroundColor={backgroundColor} />
+        </Flex>
+        <Box maxH="200px" overflowY="auto" borderRadius="10px" backgroundColor={backgroundColor}>
           <Table variant="simple">
-            <Thead backgroundColor="rgba(255, 255, 255, 0.037)">
+            <Thead backgroundColor={header}>
               <Tr>
                 {columns.map((column) => (
                   <Th key={column.key} textAlign="center">
@@ -456,13 +480,30 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
               </Tr>
             </Thead>
             <Tbody>
-              {data ? (
+              {filteredData.map((row, rowIndex) => (
+                <Tr
+                  key={rowIndex}
+                  _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
+                  onClick={() => handleSelectRow(row)}
+                  bg={selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]) ? useColorModeValue("blue.200", "blue.800") : ""}
+                >
+                  {Object.values(row).map((value, columnIndex) => (
+                    <Td key={columnIndex} whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxWidth="250px">
+                      <Tooltip label={value} placement="top">
+                        <div style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+                          {typeof value === "boolean" ? (value ? "Si" : "No") : value}
+                        </div>
+                      </Tooltip>
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+              {/*data ? (
                 data.map((row) => (
                   <Tr
                     key={row.id}
                     onClick={() => handleSelectRow(row)}
                     _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
-                    //bg={selectedRow?.[firstColumnName] === row[firstColumnName] ? useColorModeValue("blue.200", "blue.800") : ""}
                     bg={selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]) ? useColorModeValue("blue.200", "blue.800") : ""}
                   >
                     {columns.map((column) => (
@@ -482,7 +523,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
                     No data available
                   </Td>
                 </Tr>
-              )}
+              )*/}
             </Tbody>
           </Table>
         </Box>

@@ -125,7 +125,9 @@ export async function POST(req: Request) {
       
       const query = `UPDATE ${table} SET (${columns}) = (${placeholders}) WHERE ${conditionColumns} RETURNING *`;
       values.push(...conditionValues);
-
+      
+      console.log(query)
+      console.log(values)
       const result = await db.query(query, values);
 
       if (!result.rows.length) {

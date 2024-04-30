@@ -6,7 +6,6 @@ import { Box, Text, useColorMode, useColorModeValue, ColorModeProvider, Switch, 
 import { HamburgerIcon, MoonIcon, SunIcon, InfoIcon, SearchIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
 import { signOut } from "next-auth/react";
-import { color } from "framer-motion";
 const Item = ({ title, color, icon, link }: { title: string; color: string; icon: JSX.Element; link: string }) => {
   return (
     <MenuItem component={<Link as={NextLink} href={link} />} icon={icon}>
@@ -71,8 +70,8 @@ const Sidebar = ({ username }: { username: string }) => {
 
   return (
     <ColorModeProvider options={{ initialColorMode: "dark" }}>
-      <Box bg={backgroundColor} minHeight="100vh">
-        <ProSidebar collapsed={isCollapsed} backgroundColor={backgroundColor}>
+      <Box bg={backgroundColor} minHeight="100vh" width={isCollapsed ? "80px" : "250px"}>
+        <ProSidebar collapsed={isCollapsed} backgroundColor={backgroundColor} collapsedWidth="80px">
           <Menu
             menuItemStyles={{
               button: {
