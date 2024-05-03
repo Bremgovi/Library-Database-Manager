@@ -1,4 +1,3 @@
-
 "use client";
 import GenericTable from "@/components/table";
 

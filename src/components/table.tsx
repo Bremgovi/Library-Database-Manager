@@ -1,6 +1,7 @@
 import { SetStateAction, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
 import { Column, RowData, TableProps } from "./data/interfaces";
+import { getSession } from "next-auth/react";
 import {
   Text,
   Center,
@@ -38,7 +39,45 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [radioData, setRadioData] = useState<{ [key: string]: RowData[] }>({});
   const [idData, setIdData] = useState<String[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [session, setSession] = useState<any>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const showToast = useCustomToast();
+
+  const admin = "Administrador";
+  const user = "Visitante";
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const session = await getSession();
+      if (!session) {
+        console.log("No session found");
+      }
+      if (session) {
+        console.log("Session found");
+        setSession(session);
+      }
+    };
+    fetchSession();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      try {
+        const response = await fetch(`/api/user?username=${session?.user.username}`, { method: "GET" });
+        if (response.ok) {
+          const data = await response.json();
+          setUserType(data.type);
+        } else {
+          console.error("Failed to fetch user type");
+        }
+      } catch (error) {
+        console.error("Error fetching user type:", error);
+      }
+    };
+    if (session) {
+      fetchUserType();
+    }
+  }, [session]);
 
   // Colors
   const iconColor = useColorModeValue("gray.600", "gray.300");
@@ -447,7 +486,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   };
 
   /* Handle table view and design */
-  return (
+  return userType === admin ? (
     <Center height="100%">
       <Stack spacing={4} maxWidth="70%">
         <Text fontSize="6xl" textAlign="center">
@@ -512,7 +551,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         </Flex>
       </Stack>
     </Center>
-  );
+  ) : null;
 };
 
 export default GenericTable;
