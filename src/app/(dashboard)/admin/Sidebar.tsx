@@ -14,7 +14,7 @@ const Item = ({ title, color, icon, link }: { title: string; color: string; icon
   );
 };
 
-const Sidebar = ({ username }: { username: string }) => {
+const Sidebar = ({ session }: { session: any }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
   const textColor = useColorModeValue("black", "white");
@@ -53,7 +53,7 @@ const Sidebar = ({ username }: { username: string }) => {
   useEffect(() => {
     const fetchUserType = async () => {
       try {
-        const response = await fetch(`/api/user?username=${username}`, { method: "GET" });
+        const response = await fetch(`/api/user?username=${session?.user.username}`, { method: "GET" });
         if (response.ok) {
           const data = await response.json();
           setTypeName(data.type);
@@ -68,8 +68,8 @@ const Sidebar = ({ username }: { username: string }) => {
     fetchUserType();
   }, []);
 
-  return (
-    <ColorModeProvider options={{ initialColorMode: "dark" }}>
+  return session?.user ? (
+    <ColorModeProvider options={{ initialColorMode: "light" }}>
       <Box bg={backgroundColor} minHeight="100vh" width={isCollapsed ? "80px" : "250px"}>
         <ProSidebar collapsed={isCollapsed} backgroundColor={backgroundColor} collapsedWidth="80px">
           <Menu
@@ -98,7 +98,7 @@ const Sidebar = ({ username }: { username: string }) => {
                     <AvatarBadge boxSize="0.7em" bg="green.500" />
                   </Avatar>
                   <Text fontSize="2xl" fontWeight="bold" mt="2">
-                    {username}
+                    {session?.user.username || "Loading..."}
                   </Text>
                   <Text fontSize="md" color="green.500">
                     {" "}
@@ -161,7 +161,7 @@ const Sidebar = ({ username }: { username: string }) => {
         </Flex>
       </Box>
     </ColorModeProvider>
-  );
+  ) : null;
 };
 
 export default Sidebar;

@@ -1,9 +1,11 @@
 import { authOptions } from "@/lib/auth";
 import { Center, Stack, Text } from "@chakra-ui/react";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 const Welcome = async () => {
   const session = await getServerSession(authOptions);
+
   return session?.user ? (
     <Center height="100%">
       <Stack spacing={4}>
@@ -16,11 +18,7 @@ const Welcome = async () => {
       </Stack>
     </Center>
   ) : (
-    <Center height="100vh">
-      <Text fontSize="6xl" textAlign="center">
-        Please Login to see the admin page
-      </Text>
-    </Center>
+    redirect("/login")
   );
 };
 

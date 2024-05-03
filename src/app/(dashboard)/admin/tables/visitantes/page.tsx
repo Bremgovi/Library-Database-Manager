@@ -1,5 +1,4 @@
 "use client";
-import { Text } from "@chakra-ui/react";
 import GenericTable from "@/components/table";
 
 const idColumns = [

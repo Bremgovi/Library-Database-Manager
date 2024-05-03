@@ -280,7 +280,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             const [numericPart, stringPart] = placeholder[key].split(" ", 2);
 
             if (idColumnsArray.includes(key)) {
-              console.log("hola");
               updatedRowData[key] = idValue;
               updatedSelectedRow[key] = idValue;
             } else {
@@ -292,7 +291,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
             updatedSelectedRow[key] = placeholder[key];
           }
         }
-
         setRowData(updatedRowData);
         setSelectedRows([...selectedRows, updatedSelectedRow]);
       }
@@ -498,32 +496,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
                   ))}
                 </Tr>
               ))}
-              {/*data ? (
-                data.map((row) => (
-                  <Tr
-                    key={row.id}
-                    onClick={() => handleSelectRow(row)}
-                    _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
-                    bg={selectedRows.some((selectedRow) => selectedRow[firstColumnName] === row[firstColumnName]) ? useColorModeValue("blue.200", "blue.800") : ""}
-                  >
-                    {columns.map((column) => (
-                      <Td key={column.key} whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxWidth="250px">
-                        <Tooltip label={column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]} placement="top">
-                          <div style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
-                            {column.type === "boolean" ? (row[column.key] ? "Si" : "No") : row[column.key]}
-                          </div>
-                        </Tooltip>
-                      </Td>
-                    ))}
-                  </Tr>
-                ))
-              ) : (
-                <Tr>
-                  <Td colSpan={columns.length} textAlign="center">
-                    No data available
-                  </Td>
-                </Tr>
-              )*/}
             </Tbody>
           </Table>
         </Box>
