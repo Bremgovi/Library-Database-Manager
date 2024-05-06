@@ -151,7 +151,7 @@ const Sidebar = ({ session }: { session: any }) => {
         <Flex height="6%" justifyContent="flex-end" alignItems="flex-end" paddingRight="5">
           <Button
             onClick={() => {
-              signOut({ redirect: true, callbackUrl: `${window.location.origin}/login` });
+              signOut({ redirect: true, callbackUrl: `${window.location.origin}` });
             }}
             colorScheme="red"
             variant="solid"

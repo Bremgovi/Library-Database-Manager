@@ -11,8 +11,8 @@ const Navbar = () => {
         </Heading>
       </Flex>
       <Box>
-        <Button>
-          <Link as={NextLink} href="/admin">
+        <Button color="white" bgColor="rgba(166, 0, 255, 0.7)" _hover={{ filter: "brightness(180%)", transition: "1s" }}>
+          <Link as={NextLink} href="/admin" textDecoration={"none"} _hover={{ textDecoration: "none" }}>
             Get Started
           </Link>
         </Button>
