@@ -399,7 +399,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
       setSelectedRows([...selectedRows, row]);
     }
 
-    if (selectedRows && JSON.stringify(setSelectedRows) === JSON.stringify(displayedRow)) {
+    if (selectedRows && JSON.stringify(selectedRows[0]) === JSON.stringify(displayedRow)) {
       setRowData({});
     } else {
       setRowData(displayedRow);
