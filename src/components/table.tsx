@@ -32,7 +32,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
   const [columns, setColumns] = useState<Column[]>([]);
-  const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
   const [selectedRows, setSelectedRows] = useState<RowData[]>([]);
   const [idValue, setIdValue] = useState<String>("");
   const [placeholder, setPlaceholder] = useState<RowData | null>(null);
@@ -400,11 +399,9 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
       setSelectedRows([...selectedRows, row]);
     }
 
-    if (selectedRow && JSON.stringify(selectedRow) === JSON.stringify(displayedRow)) {
-      setSelectedRow(null);
+    if (selectedRows && JSON.stringify(setSelectedRows) === JSON.stringify(displayedRow)) {
       setRowData({});
     } else {
-      setSelectedRow(displayedRow);
       setRowData(displayedRow);
     }
   };

@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       }).join(', ');
 
       const joinConditions = idColumnsArray.map(({ foreignTable, idColumn }) => {
-          return `JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
+          return `LEFT JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
       }).join(' ');
       
       const dataQuery = `
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
       FROM ${table}
       ${joinConditions};
       `;
+      console.log(dataQuery);
       
       const idColumnsQuery = `SELECT ${idColumnsName} from ${foreignTableName}`;
       const idColumnsResult = await db.query(idColumnsQuery);
