@@ -398,9 +398,22 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     } else {
       setSelectedRows([...selectedRows, row]);
     }
-
-    if (selectedRows && JSON.stringify(selectedRows[0]) === JSON.stringify(displayedRow)) {
-      setRowData({});
+    if (selectedRows[0]) {
+      let originalJson = JSON.parse(JSON.stringify(selectedRows[0]));
+      for (let key in originalJson) {
+        if (key.includes("id_")) {
+          let value = originalJson[key];
+          if (typeof value === "string") {
+            const numericPart = value.split(" ")[0];
+            originalJson[key] = parseInt(numericPart, 10);
+          }
+        }
+      }
+      if (selectedRows && JSON.stringify(originalJson) === JSON.stringify(displayedRow)) {
+        setRowData({});
+      } else {
+        setRowData(displayedRow);
+      }
     } else {
       setRowData(displayedRow);
     }

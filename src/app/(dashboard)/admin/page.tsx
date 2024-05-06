@@ -10,7 +10,7 @@ const Welcome = async () => {
         <Text fontSize="6xl" textAlign="center">
           Welcome back
         </Text>
-        <Text fontSize="6xl" color="red" textAlign="center">
+        <Text fontSize="6xl" color="#af4261" textAlign="center">
           {session?.user.username}!
         </Text>
       </Stack>

@@ -153,7 +153,9 @@ const Sidebar = ({ session }: { session: any }) => {
             onClick={() => {
               signOut({ redirect: true, callbackUrl: `${window.location.origin}` });
             }}
-            colorScheme="red"
+            bgColor="#de295c"
+            color="white"
+            _hover={{ opacity: "0.7", transition: "1s" }}
             variant="solid"
           >
             Sign out
