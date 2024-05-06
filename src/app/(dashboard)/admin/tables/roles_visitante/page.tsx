@@ -1,6 +1,5 @@
-
 "use client";
-import GenericTable from "@/components/table";
+import GenericTable from "@/components/Table";
 
 const Roles_visitante = () => {
   return <GenericTable table="roles_visitante" endpoint="/api/operations" />;

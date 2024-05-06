@@ -1,5 +1,5 @@
 "use client";
-import Navbar from "@/components/navbar";
+import Navbar from "@/components/Navbar";
 import { Box, Center, Flex, Image } from "@chakra-ui/react";
 import Typewriter from "typewriter-effect";
 

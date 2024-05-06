@@ -11,27 +11,15 @@ const AuthForm = ({ mode }: { mode: string }) => {
   return (
     <>
       <Center bg={"#1d1d29"} height="100vh">
-        <BigContainer mode={mode} />
+        <Flex minWidth="90%" height="90%" justify="center" align="center" borderRadius={20} overflow="hidden" zIndex="1" flexDirection={["column", "column", "row"]}>
+          <Center width={["100%", "100%", "30%"]} height="100%" p={4} bg={"white"}>
+            <Image src="/kaguya.png" alt="Image" width={["40%", "40%", "90%"]} />
+          </Center>
+          <Form mode={mode} />
+        </Flex>
       </Center>
       <ParticleEffect />
     </>
-  );
-};
-
-const BigContainer = ({ mode }: { mode: string }) => {
-  return (
-    <Flex minWidth="90%" height="90%" justify="center" align="center" borderRadius={20} overflow="hidden" zIndex="1" flexDirection={["column", "column", "row"]}>
-      <ImageContainer />
-      <Form mode={mode} />
-    </Flex>
-  );
-};
-
-const ImageContainer = () => {
-  return (
-    <Center width={["100%", "100%", "30%"]} height="100%" p={4} bg={"white"}>
-      <Image src="/kaguya.png" alt="Image" width={["40%", "40%", "90%"]} />
-    </Center>
   );
 };
 

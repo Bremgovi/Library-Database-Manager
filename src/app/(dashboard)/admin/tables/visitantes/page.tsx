@@ -1,5 +1,5 @@
 "use client";
-import GenericTable from "@/components/table";
+import GenericTable from "@/components/Table";
 
 const idColumns = [
   { foreignTable: "usuarios", idColumn: "id_usuario", columns: ["usuario"] },
