@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import BeatLoader from "react-spinners/BeatLoader";
 import useCustomToast from "./toasts";
 
-const AuthForm = ({ mode }: { mode: string }) => {
+const AuthForm = ({ mode, imageSrc }: { mode: string; imageSrc: string }) => {
   return (
     <>
       <Center bg={"#1d1d29"} height="100vh">
         <Flex minWidth="90%" height="90%" justify="center" align="center" borderRadius={20} overflow="hidden" zIndex="1" flexDirection={["column", "column", "row"]}>
           <Center width={["100%", "100%", "30%"]} height="100%" p={4} bg={"white"}>
-            <Image src="/kaguya.png" alt="Image" width={["40%", "40%", "90%"]} />
+            <Image src={imageSrc} alt="Image" width={["40%", "40%", "90%"]} />
           </Center>
           <Form mode={mode} />
         </Flex>

@@ -2,7 +2,7 @@
 import AuthForm from "../../components/AuthForm";
 
 const LoginPage = () => {
-  return <AuthForm mode="login" />;
+  return <AuthForm mode="login" imageSrc="kaguya.png" />;
 };
 
 export default LoginPage;
