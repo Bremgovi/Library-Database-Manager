@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link } from "@chakra-ui/react";
+import { Text, Box, Button, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel, Heading, Input, Image, Link, Center } from "@chakra-ui/react";
 import ParticleEffect from "../../components/particles";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -10,9 +10,9 @@ import useCustomToast from "../../components/toasts";
 const Homepage = () => {
   return (
     <>
-      <Flex minHeight="100vh" width="100%" align="center" justify="center" bg={"#1d1d29"}>
+      <Center bg={"#1d1d29"} height="100vh">
         <BigContainer />
-      </Flex>
+      </Center>
       <ParticleEffect />
     </>
   );
@@ -20,7 +20,7 @@ const Homepage = () => {
 
 const BigContainer = () => {
   return (
-    <Flex width="90%" height="90vh" justify="center" align="center" borderRadius="10" overflow="hidden" zIndex="1">
+    <Flex minWidth="90%" height="90%" justify="center" align="center" borderRadius={20} overflow="hidden" zIndex="1" flexDirection={["column", "column", "row"]}>
       <ImageContainer />
       <LoginForm />
     </Flex>
@@ -29,9 +29,9 @@ const BigContainer = () => {
 
 const ImageContainer = () => {
   return (
-    <Flex width="30%" height="100%" p={4} justify="center" align="center" bg={"white"}>
-      <Image src="/kaguya.png" alt="Image" />
-    </Flex>
+    <Center width={["100%", "100%", "30%"]} height="100%" p={4} bg={"white"}>
+      <Image src="/kaguya.png" alt="Image" width={["40%", "40%", "90%"]} />
+    </Center>
   );
 };
 
@@ -73,7 +73,7 @@ const LoginForm = () => {
   const isPasswordError = password === "";
 
   return (
-    <Flex width="70%" height="100%" p={4} justify="center" align="center" bg={"rgba(200,200,200, 0.1)"}>
+    <Flex width={["100%", "100%", "70%"]} height="100%" p={4} justify="center" align="center" bg={"rgba(200,200,200, 0.1)"}>
       <Box width="80%" p={4} bg={"white"} borderRadius={10}>
         <Heading textAlign="center" color={"black"}>
           Login
