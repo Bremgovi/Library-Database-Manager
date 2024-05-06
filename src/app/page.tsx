@@ -8,8 +8,8 @@ const Home = () => {
   return (
     <Box backgroundImage={backgroundStyle} backgroundColor="rgba(0, 0, 0, 1)" height="100vh">
       <Navbar />
-      <Flex width="100vw">
-        <Box fontSize="90px" color="white" width="60%" margin={20} marginTop={0}>
+      <Flex width="100vw" flexDirection={["column", "row"]}>
+        <Box fontSize={["25px", "90px"]} color="white" width="60%" margin={20} marginTop={0}>
           <Typewriter
             onInit={(typewriter) => {
               typewriter
@@ -22,11 +22,11 @@ const Home = () => {
             }}
           />
         </Box>
-        <Box width="40%">
-          <Center height="100%">
+        <Center width={["90%", "40%"]}>
+          <Center width={["300px", "500px"]} height={["300px", "500px"]} backgroundColor="rgba(166, 0, 255, 0.2)" borderRadius="50%" marginLeft={[10, 0]}>
             <Image className="floating-image" src="book.png" alt="book" marginRight={20} />
           </Center>
-        </Box>
+        </Center>
       </Flex>
       <Box position="absolute" marginTop={-50} backgroundColor="rgba(166, 0, 255, 0.7)" width="20%" height="30px"></Box>
     </Box>

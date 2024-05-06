@@ -65,7 +65,6 @@ export async function POST(req: Request) {
       FROM ${table}
       ${joinConditions};
       `;
-      console.log(dataQuery);
       
       const idColumnsQuery = `SELECT ${idColumnsName} from ${foreignTableName}`;
       const idColumnsResult = await db.query(idColumnsQuery);

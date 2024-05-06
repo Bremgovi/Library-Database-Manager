@@ -13,6 +13,10 @@ const radioColumns = [
 ];
 
 const Visitantes = () => {
-  return <GenericTable table="visitantes" endpoint="/api/operations" idColumns={idColumns} radioColumns={radioColumns} />;
+  return (
+    <>
+      <GenericTable table="visitantes" endpoint="/api/operations" idColumns={idColumns} radioColumns={radioColumns} />
+    </>
+  );
 };
 export default Visitantes;
