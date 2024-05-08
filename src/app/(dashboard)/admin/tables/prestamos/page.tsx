@@ -7,9 +7,11 @@ const idColumns = [
   { foreignTable: "estados_prestamo", idColumn: "id_estado", columns: ["descripcion"] },
 ];
 
+const unchangeableColumn = "id_empleado";
+
 const radioColumns = [{ foreignTable: "estados_prestamo", idColumn: "id_estado", descriptionColumn: "descripcion" }];
 
 const Prestamos = () => {
-  return <GenericTable table="prestamos" endpoint="/api/operations" idColumns={idColumns} radioColumns={radioColumns} />;
+  return <GenericTable table="prestamos" endpoint="/api/operations" idColumns={idColumns} radioColumns={radioColumns} unchangeableColumn={unchangeableColumn} />;
 };
 export default Prestamos;

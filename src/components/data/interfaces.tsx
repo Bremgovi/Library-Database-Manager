@@ -26,6 +26,8 @@ interface TableProps {
   endpoint: string;
   idColumns?: IdColumns[];
   radioColumns?: RadioColumns[];
+  unchangeableColumn?: string;
+  checkColumns?: RadioColumns[];
 }
 
 export type { Column, IdColumns, RowData, TableProps };

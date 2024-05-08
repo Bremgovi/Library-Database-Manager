@@ -57,15 +57,26 @@ export async function POST(req: Request) {
           return `LEFT JOIN ${foreignTable} ON ${table}.${idColumn} = ${foreignTable}.${idColumn}`;
       }).join(' ');
       
-      const dataQuery = `
-      SELECT 
-          ${firstColumn},
-          ${concatExpressions},
-          ${allColumns}
-      FROM ${table}
-      ${joinConditions};
-      `;
-      
+      let dataQuery = "";
+      if(allColumns.length > 0){
+        dataQuery = `
+        SELECT 
+            ${firstColumn},
+            ${concatExpressions},
+            ${allColumns}
+        FROM ${table}
+        ${joinConditions};
+        `;
+      }else{
+        dataQuery = `
+        SELECT 
+            ${concatExpressions}
+        FROM ${table}
+        ${joinConditions};
+        `;
+      }
+
+      console.log(dataQuery)
       const idColumnsQuery = `SELECT ${idColumnsName} from ${foreignTableName}`;
       const idColumnsResult = await db.query(idColumnsQuery);
       
@@ -98,8 +109,11 @@ export async function POST(req: Request) {
 
       const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
 
+      
+
       const result = await db.query(query, values);
 
+      console.log(values)
       if (!result.rows.length) {
         return NextResponse.json(
           { message: "Failed to insert data into the table!" },
@@ -147,12 +161,30 @@ export async function POST(req: Request) {
 
     /* DELETE DATA*/
     else if (deleteCondition) {
+      let isIdColumn = false;
       const conditionColumns = Object.keys(deleteCondition).map((key, index) => {
-        const values = deleteCondition[key];
+        if(key.includes("id_")){ 
+          isIdColumn = true;
+        } 
+        let values = deleteCondition[key];
         const placeholders = values.map((_:any, idx:any) => `$${index * values.length + idx + 1}`).join(', ');
         return `${key} IN (${placeholders})`;
       }).join(' OR ');
-      const conditionValues = Object.values(deleteCondition).flat();
+
+      let conditionValues: unknown[] = [];
+
+      if(isIdColumn){
+        conditionValues = Object.values(deleteCondition).flat().map((value: any) => {
+          if (typeof value === 'string') {
+            return value.replace(/\D/g, '');
+          }
+          return value;
+        });
+      }else{
+        conditionValues = Object.values(deleteCondition).flat();
+      }
+
+
       const query = `DELETE FROM ${table} WHERE ${conditionColumns} RETURNING *`;
       console.log(query); 
       const result = await db.query(query, conditionValues);

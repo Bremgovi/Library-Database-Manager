@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const username = searchParams.get('username');
   const type = await db.query('SELECT tu.descripcion FROM usuarios u JOIN tipos_usuario tu ON u.id_tipo = tu.id_tipo WHERE u.usuario = $1', [username]);
+  const employeeId = await db.query('SELECT empleados.id_empleado FROM empleados JOIN usuarios ON empleados.id_usuario = usuarios.id_usuario WHERE usuarios.usuario = $1', [username]);
   if (type.rows.length === 0) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
-  return NextResponse.json({type: type.rows[0].descripcion}, {status: 200});
+  return NextResponse.json({type: type.rows[0].descripcion, employeeId: employeeId.rows[0]}, {status: 200});
 }

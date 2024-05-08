@@ -148,7 +148,7 @@ const Sidebar = ({ session }: { session: any }) => {
             </Box>
           </Menu>
         </ProSidebar>
-        <Flex height="6%" justifyContent="flex-end" alignItems="flex-end" paddingRight="5">
+        <Flex width="80%" alignItems="flex-end" justifyContent="flex-end" display={isCollapsed ? "none" : "flex"}>
           <Button
             onClick={() => {
               signOut({ redirect: true, callbackUrl: `${window.location.origin}` });

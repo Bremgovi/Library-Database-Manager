@@ -1,4 +1,4 @@
-import { SetStateAction, useEffect, useState } from "react";
+import { ChangeEvent, SetStateAction, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
 import { Column, RowData, TableProps } from "./data/interfaces";
 import { getSession } from "next-auth/react";
@@ -16,18 +16,18 @@ import {
   Tbody,
   useColorModeValue,
   Td,
+  Select,
   Flex,
   Button,
   Box,
-  Select,
   Tooltip,
   RadioGroup,
   Radio,
   IconButton,
 } from "@chakra-ui/react";
+import Select2 from "react-select";
 import { SearchIcon } from "@chakra-ui/icons";
-
-const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) => {
+const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, unchangeableColumn }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
@@ -40,10 +40,19 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const [session, setSession] = useState<any>(null);
   const [userType, setUserType] = useState<string | null>(null);
+  const [employeeId, setEmployeeId] = useState<number | null>(1);
   const showToast = useCustomToast();
 
+  // State to hold filtered options
+  const [filteredOptions, setFilteredOptions] = useState<any[]>([]);
+
+  // Function to filter options based on search query
+  const filterOptions = (query: string, column: Column) => {
+    const filtered = radioData[column.key]?.filter((option: any) => option.description.toLowerCase().includes(query.toLowerCase()));
+    setFilteredOptions(filtered || []);
+  };
+
   const admin = "Administrador";
-  const user = "Visitante";
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -66,6 +75,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         if (response.ok) {
           const data = await response.json();
           setUserType(data.type);
+          setEmployeeId(data.employeeId[Object.keys(data.employeeId)[0]]);
         } else {
           console.error("Failed to fetch user type");
         }
@@ -76,7 +86,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     if (session) {
       fetchUserType();
     }
-  }, [session]);
+  }, [session, employeeId]);
 
   // Colors
   const iconColor = useColorModeValue("gray.600", "gray.300");
@@ -89,7 +99,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   };
 
   // Filtered data based on search query
-  const filteredData = data.filter((row) =>
+  const filteredData = data?.filter((row) =>
     Object.values(row).some((value) => {
       if (value !== null && value !== undefined) {
         try {
@@ -240,10 +250,22 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     return { idValue: id, data: transformedRow };
   };
 
+  useEffect(() => {
+    if (unchangeableColumn && employeeId !== null) {
+      const event = {
+        target: {
+          name: unchangeableColumn,
+          value: String(employeeId),
+        },
+      };
+      handleChange(event);
+    }
+  }, [unchangeableColumn, employeeId]);
+
   /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
     let { name, value } = e.target;
-
+    console.log(name, value);
     const currentColumn = columns.find((column) => column.key === name);
     if (currentColumn && currentColumn.type === "boolean") {
       setRowData({
@@ -339,7 +361,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
   const handleOperation = async (operation: "insert" | "update" | "delete") => {
     try {
       let requestBody: any = { table: table };
-
       switch (operation) {
         case "insert":
           requestBody.data = rowData;
@@ -433,24 +454,74 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
 
   /* Handle INPUT field rendering */
   const renderInput = (column: Column) => {
+    const styles = {
+      control: (baseStyles: any, state: any) => ({
+        ...baseStyles,
+        color: "white",
+        backgroundColor: "transparent",
+      }),
+      menu: (baseStyles: any) => ({
+        ...baseStyles,
+        backgroundColor: "rgba(35, 34, 45, 1)",
+        color: useColorModeValue("black", "white"),
+      }),
+      option: (baseStyles: any, state: { isFocused: any }) => ({
+        ...baseStyles,
+        backgroundColor: state.isFocused ? "rgba(87, 86, 107, 1)" : "transparent",
+      }),
+      singleValue: (baseStyles: any) => ({
+        ...baseStyles,
+        color: "white",
+      }),
+      input: (baseStyles: any) => ({
+        ...baseStyles,
+        color: "white", // Change color for input text here
+      }),
+    };
     const renderRadioInput = (column: Column) => {
-      return (
-        <RadioGroup
-          name={column.key}
-          onChange={(nextValue: string) => handleChange({ target: { name: column.key, value: nextValue } })}
-          value={String(rowData[column.key] || "")} // Ensure the value is converted to string for comparison
-        >
-          <Stack direction="row">
-            {radioData[column.key] &&
-              radioData[column.key].map((option: any, index: any) => (
-                <Radio key={index} value={String(option.id)}>
-                  {" "}
-                  {option.description}
-                </Radio>
-              ))}
-          </Stack>
-        </RadioGroup>
-      );
+      const isRadioColumn = radioColumns?.some((rc) => rc.idColumn === column.key);
+      const isCheckColumn = checkColumns?.some((cc) => cc.idColumn === column.key);
+
+      if (isRadioColumn && !isCheckColumn) {
+        return (
+          <RadioGroup
+            name={column.key}
+            onChange={(nextValue: string) => handleChange({ target: { name: column.key, value: nextValue } })}
+            value={String(rowData[column.key] || "")} // Ensure the value is converted to string for comparison
+          >
+            <Stack direction="row">
+              {radioData[column.key] &&
+                radioData[column.key].map((option: any, index: any) => (
+                  <Radio key={index} value={String(option.id)}>
+                    {" "}
+                    {option.description}
+                  </Radio>
+                ))}
+            </Stack>
+          </RadioGroup>
+        );
+      } else {
+        const options = radioData[column.key]?.map((option: any) => ({
+          value: String(option.id),
+          label: option.description,
+        }));
+
+        const handleChangeReactSelect = (selectedOption: any) => {
+          handleChange({ target: { name: column.key, value: selectedOption ? selectedOption.value : "" } });
+        };
+
+        return (
+          <Select2
+            styles={styles}
+            name={column.key}
+            placeholder="Search..."
+            options={options}
+            onChange={handleChangeReactSelect}
+            value={options?.find((option) => option.value === String(rowData[column.key] || ""))}
+            isSearchable={true}
+          />
+        );
+      }
     };
 
     const renderDateInput = (column: Column) => (
@@ -463,17 +534,36 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
         onKeyDown={handleTabPress}
       />
     );
-    const renderBooleanInput = (column: Column) => (
-      <Select name={column.key} value={rowData[column.key] ? "Si" : "No"} onChange={handleChange}>
-        <option value="Si">Si</option>
-        <option value="No">No</option>
-      </Select>
+
+    const renderBooleanInput = (column: Column, options: any) => (
+      <Select2
+        name={column.key}
+        styles={styles}
+        value={{ value: rowData[column.key] ? "Si" : "No", label: rowData[column.key] ? "Si" : "No" }}
+        onChange={(selectedOption) => handleChange({ target: { name: column.key, value: selectedOption ? selectedOption.value : "" } })}
+        options={options}
+      />
     );
+
     const renderDefaultInput = (column: Column) => {
       const placeholderValue = placeholder && placeholder[column.key] ? placeholder[column.key] : `Enter ${formatLabel(column.label)}`;
       const inputType = column.type === "int" ? (column.key === firstColumnName ? "number" : column.key.includes("id") ? "text" : "number") : "text";
-
-      return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} />;
+      if (column.key === unchangeableColumn) {
+        if (employeeId !== null) {
+          return (
+            <Input
+              name={column.key}
+              defaultValue={employeeId}
+              type={inputType}
+              isReadOnly
+              backgroundColor="rgba(150, 150, 150, 0.3)"
+              color={useColorModeValue("rgba(0, 0, 0, 0.3)", "rgba(113, 113, 113, 1)")}
+            />
+          );
+        }
+      } else {
+        return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} />;
+      }
     };
 
     if (column.type === "date") {
@@ -481,7 +571,11 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
     }
 
     if (column.type === "boolean") {
-      return renderBooleanInput(column);
+      const options = [
+        { value: "Si", label: "Si" },
+        { value: "No", label: "No" },
+      ];
+      return renderBooleanInput(column, options);
     }
 
     if (radioColumns) {
@@ -527,7 +621,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns }: TableProps) 
               </Tr>
             </Thead>
             <Tbody>
-              {filteredData.map((row, rowIndex) => (
+              {filteredData?.map((row, rowIndex) => (
                 <Tr
                   key={rowIndex}
                   _hover={{ bg: useColorModeValue("blue.200", "blue.800"), cursor: "pointer" }}
