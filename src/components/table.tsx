@@ -210,10 +210,13 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
             });
             if (response.ok) {
               const responseData = await response.json();
-              const updatedData = responseData.data.map((item: any) => ({
-                id: item[radioColumn.idColumn],
-                description: item[radioColumn.descriptionColumn],
-              }));
+              const updatedData = responseData.data.map((item: any) => {
+                console.log("item", item); // Log each item
+                return {
+                  id: item[radioColumn.idColumn],
+                  description: radioColumn.descriptionColumn.map((col: string) => item[col]).join(" "),
+                };
+              });
               radioDataToUpdate[radioColumn.idColumn] = updatedData;
             } else {
               console.error(`Failed to fetch radio columns`);

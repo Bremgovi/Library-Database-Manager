@@ -19,7 +19,8 @@ export async function POST(req: Request) {
 
     if (radioColumn){
       const { foreignTable, idColumn, descriptionColumn } = radioColumn;
-      const query = `SELECT ${idColumn}, ${descriptionColumn} FROM ${foreignTable}`;
+      const columns = [idColumn, ...descriptionColumn].join(', ');
+      const query = `SELECT ${columns} FROM ${foreignTable}`;
       const result = await db.query(query);
       if (!result.rows.length) {
         return NextResponse.json({ message: 'No data found for the specified table!' });

@@ -14,7 +14,7 @@ interface IdColumns {
 interface RadioColumns {
   foreignTable: string;
   idColumn: string;
-  descriptionColumn: string;
+  descriptionColumn: string[];
 }
 
 interface RowData {

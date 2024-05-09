@@ -9,14 +9,14 @@ const idColumns = [
 ];
 const unchangeableColumn = "id_empleado";
 const radioColumns = [
-  { foreignTable: "estados_prestamo", idColumn: "id_estado", descriptionColumn: "descripcion" },
-  { foreignTable: "visitantes", idColumn: "id_visitante", descriptionColumn: "nombre" },
+  { foreignTable: "estados_prestamo", idColumn: "id_estado", descriptionColumn: ["descripcion"] },
+  { foreignTable: "visitantes", idColumn: "id_visitante", descriptionColumn: ["nombre", "ap_paterno", "ap_materno"] },
 ];
-const checkColumns = [{ foreignTable: "visitantes", idColumn: "id_visitante", descriptionColumn: "nombre" }];
+const checkColumns = [{ foreignTable: "visitantes", idColumn: "id_visitante", descriptionColumn: ["nombre"] }];
 
 const nestedTableIdColumns = [{ foreignTable: "libros", idColumn: "id_libro", columns: ["titulo"] }];
-const nestedTableRadioColumns = [{ foreignTable: "libros", idColumn: "id_libro", descriptionColumn: "titulo" }];
-const nestedTableCheckColumns = [{ foreignTable: "libros", idColumn: "id_libro", descriptionColumn: "titulo" }];
+const nestedTableRadioColumns = [{ foreignTable: "libros", idColumn: "id_libro", descriptionColumn: ["titulo"] }];
+const nestedTableCheckColumns = [{ foreignTable: "libros", idColumn: "id_libro", descriptionColumn: ["titulo"] }];
 
 const Prestamos = () => {
   return (

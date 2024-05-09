@@ -8,12 +8,12 @@ const idColumns = [
 ];
 
 const radioColumns = [
-  { foreignTable: "generos_persona", idColumn: "id_genero", descriptionColumn: "descripcion" },
-  { foreignTable: "roles_visitante", idColumn: "id_rol", descriptionColumn: "descripcion" },
-  { foreignTable: "usuarios", idColumn: "id_usuario", descriptionColumn: "usuario" },
+  { foreignTable: "generos_persona", idColumn: "id_genero", descriptionColumn: ["descripcion"] },
+  { foreignTable: "roles_visitante", idColumn: "id_rol", descriptionColumn: ["descripcion"] },
+  { foreignTable: "usuarios", idColumn: "id_usuario", descriptionColumn: ["usuario"] },
 ];
 
-const checkColumns = [{ foreignTable: "usuarios", idColumn: "id_usuario", descriptionColumn: "usuario" }];
+const checkColumns = [{ foreignTable: "usuarios", idColumn: "id_usuario", descriptionColumn: ["usuario"] }];
 
 const Visitantes = () => {
   return (
