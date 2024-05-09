@@ -7,7 +7,8 @@ export async function POST(req: Request) {
   try {
     /* GET DATA */
     const body = await req.json();
-    const { table, data, condition, deleteCondition, idColumns, radioColumn } = body;
+    const { table, data, condition, deleteCondition, idColumns, radioColumn, dataFromChild, childTable } = body;
+
     /* VALIDATIONS */
     if (!table && !radioColumn) {
       return NextResponse.json(
@@ -76,7 +77,6 @@ export async function POST(req: Request) {
         `;
       }
 
-      console.log(dataQuery)
       const idColumnsQuery = `SELECT ${idColumnsName} from ${foreignTableName}`;
       const idColumnsResult = await db.query(idColumnsQuery);
       
@@ -108,12 +108,28 @@ export async function POST(req: Request) {
       const values = Object.values(data);
 
       const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
-
-      
-
       const result = await db.query(query, values);
 
-      console.log(values)
+      if(dataFromChild){
+        const columns = Object.keys(dataFromChild).join(', ');
+        const placeholders = Object.keys(dataFromChild).map((_, index) => `$${index + 1}`).join(', ');
+        const values = Object.values(dataFromChild);
+        const query = `INSERT INTO ${childTable} (${columns}) VALUES (${placeholders}) RETURNING *`;
+        const result = await db.query(query, values);
+        if (!result.rows.length) {
+          return NextResponse.json(
+            { message: "Failed to insert data into the table!" },
+            { status: 500 }
+          );
+        }
+        const insertedData = result.rows[0];
+
+        return NextResponse.json(
+          { data: insertedData, message: "Data inserted successfully!" },
+          { status: 200 }
+        );
+      }
+
       if (!result.rows.length) {
         return NextResponse.json(
           { message: "Failed to insert data into the table!" },
@@ -140,8 +156,7 @@ export async function POST(req: Request) {
       const query = `UPDATE ${table} SET (${columns}) = (${placeholders}) WHERE ${conditionColumns} RETURNING *`;
       values.push(...conditionValues);
       
-      console.log(query)
-      console.log(values)
+
       const result = await db.query(query, values);
 
       if (!result.rows.length) {
@@ -186,7 +201,7 @@ export async function POST(req: Request) {
 
 
       const query = `DELETE FROM ${table} WHERE ${conditionColumns} RETURNING *`;
-      console.log(query); 
+   
       const result = await db.query(query, conditionValues);
 
       if (!result.rows.length) {

@@ -17,17 +17,16 @@ import {
   useColorModeValue,
   Td,
   Flex,
-  Button,
   Box,
   Tooltip,
   RadioGroup,
   Radio,
   IconButton,
+  Button,
 } from "@chakra-ui/react";
 import Select from "react-select";
 import { SearchIcon } from "@chakra-ui/icons";
-import React from "react";
-const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, childTable, unchangeableColumn, children }: TableProps) => {
+const NestedTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, foreignKeyColumn, primaryKeyValue, sendDataToParent }: TableProps) => {
   const [firstColumnName, setFirstColumnName] = useState<string>("");
   const [data, setData] = useState<RowData[]>([]);
   const [rowData, setRowData] = useState<RowData>({});
@@ -41,19 +40,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
   const [session, setSession] = useState<any>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [employeeId, setEmployeeId] = useState<number | null>(1);
-  const [employeePosition, setEmployeePosition] = useState<string | null>("");
-  const [primaryKeyValue, setPrimaryKeyValue] = useState<string>("");
-
-  const [dataFromChild, setDataFromChild] = useState<RowData>({});
-
-  function handleDataFromChild(data: RowData) {
-    setDataFromChild(data);
-  }
-
-  useEffect(() => {
-    setPrimaryKeyValue(JSON.parse(JSON.stringify(rowData))[firstColumnName]);
-  }, [rowData]);
-
   const showToast = useCustomToast();
 
   const admin = "Administrador";
@@ -76,7 +62,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
           const data = await response.json();
           setUserType(data.type);
           setEmployeeId(data.employeeId[Object.keys(data.employeeId)[0]]);
-          setEmployeePosition(data.employeePosition);
         } else {
           console.error("Failed to fetch user type");
         }
@@ -87,8 +72,19 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     if (session) {
       fetchUserType();
     }
-  }, [session, employeeId, employeePosition]);
+  }, [session, employeeId]);
 
+  useEffect(() => {
+    if (primaryKeyValue) {
+      const event = {
+        target: {
+          name: foreignKeyColumn || "",
+          value: primaryKeyValue,
+        },
+      };
+      handleChange(event);
+    }
+  }, [primaryKeyValue]);
   // Colors
   const iconColor = useColorModeValue("gray.600", "gray.300");
   const backgroundColor = useColorModeValue("rgba(0, 0, 0, 0.037)", "rgba(255, 255, 255, 0.037)");
@@ -229,6 +225,12 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     fetchRadioData();
   }, []);
 
+  useEffect(() => {
+    if (sendDataToParent) {
+      sendDataToParent(rowData);
+    }
+  }, [rowData]);
+
   const removeIntegersFromFields = (row: RowData, fieldsToTransform: string[]): RowData => {
     const transformedRow: RowData = { ...row };
     let id = "";
@@ -241,18 +243,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     });
     return { idValue: id, data: transformedRow };
   };
-
-  useEffect(() => {
-    if (unchangeableColumn && employeeId !== null) {
-      const event = {
-        target: {
-          name: unchangeableColumn,
-          value: String(employeeId),
-        },
-      };
-      handleChange(event);
-    }
-  }, [unchangeableColumn, employeeId]);
 
   /* Handle input */
   const handleChange = (e: { target: { name: string; value: any } }) => {
@@ -291,6 +281,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     });
 
     if (data) {
+      value = String(value);
       const userInput = value.toLowerCase();
 
       let matchingRow;
@@ -345,57 +336,6 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
         setRowData(updatedRowData);
         setSelectedRows([...selectedRows, updatedSelectedRow]);
       }
-    }
-  };
-
-  /* Handle SQL operations */
-  const handleOperation = async (operation: "insert" | "update" | "delete") => {
-    try {
-      let requestBody: any = { table: table };
-      if (childTable) {
-        requestBody.childTable = childTable;
-      }
-
-      switch (operation) {
-        case "insert":
-          requestBody.data = rowData;
-          console.log();
-          if (dataFromChild) {
-            requestBody.dataFromChild = dataFromChild;
-          }
-          break;
-        case "update":
-          requestBody.data = rowData;
-          requestBody.condition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName])[0] };
-          break;
-        case "delete":
-          requestBody.deleteCondition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName]) };
-          break;
-        default:
-          throw new Error("Invalid operation type");
-      }
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const responseData = await response.json();
-      if (response.ok) {
-        const completionMessage = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Completed`;
-        showToast(completionMessage, `Data has been ${operation === "delete" ? "deleted" : operation === "update" ? "updated" : "inserted"} successfully.`, "success");
-        fetchData();
-      } else {
-        const defaultTitle = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Failed`;
-        const defaultMessage = `There was an error ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.`;
-
-        showToast(responseData.title || defaultTitle, responseData.message || defaultMessage, "error");
-      }
-    } catch (error) {
-      showToast("Error", `An error occurred while ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.` + error, "error");
     }
   };
 
@@ -550,19 +490,8 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     const renderDefaultInput = (column: Column) => {
       const placeholderValue = placeholder && placeholder[column.key] ? placeholder[column.key] : `Enter ${formatLabel(column.label)}`;
       const inputType = column.type === "int" ? (column.key === firstColumnName ? "number" : column.key.includes("id") ? "text" : "number") : "text";
-      if (column.key === unchangeableColumn) {
-        if (employeeId !== null) {
-          return (
-            <Input
-              name={column.key}
-              defaultValue={employeeId}
-              type={inputType}
-              isReadOnly
-              backgroundColor="rgba(150, 150, 150, 0.3)"
-              color={useColorModeValue("rgba(0, 0, 0, 0.3)", "rgba(113, 113, 113, 1)")}
-            />
-          );
-        }
+      if (column.key === foreignKeyColumn) {
+        return <Input name={column.key} value={0} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} hidden />;
       } else {
         return <Input name={column.key} value={rowData[column.key] || ""} onChange={handleChange} placeholder={placeholderValue} type={inputType} onKeyDown={handleTabPress} />;
       }
@@ -591,30 +520,72 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
     return renderDefaultInput(column);
   };
 
+  const handleOperation = async (operation: "insert" | "update" | "delete") => {
+    try {
+      let requestBody: any = { table: table };
+
+      switch (operation) {
+        case "insert":
+          requestBody.data = rowData;
+          break;
+        case "update":
+          requestBody.data = rowData;
+          requestBody.condition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName])[0] };
+          break;
+        case "delete":
+          requestBody.deleteCondition = { [firstColumnName]: selectedRows.map((selectedRow) => selectedRow[firstColumnName]) };
+          break;
+        default:
+          throw new Error("Invalid operation type");
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const responseData = await response.json();
+      if (response.ok) {
+        const completionMessage = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Completed`;
+        showToast(completionMessage, `Data has been ${operation === "delete" ? "deleted" : operation === "update" ? "updated" : "inserted"} successfully.`, "success");
+        fetchData();
+      } else {
+        const defaultTitle = `${operation.charAt(0).toUpperCase() + operation.slice(1)} Failed`;
+        const defaultMessage = `There was an error ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.`;
+
+        showToast(responseData.title || defaultTitle, responseData.message || defaultMessage, "error");
+      }
+    } catch (error) {
+      showToast("Error", `An error occurred while ${operation === "delete" ? "deleting" : operation === "update" ? "updating" : operation + "ing"} the data.` + error, "error");
+    }
+  };
+
   /* Handle table view and design */
-  return userType === admin && employeePosition === "Bibliotecario" ? (
+  return userType === admin ? (
     <Center height="100%">
-      <Stack spacing={4} maxWidth="70%">
+      <Stack spacing={4} maxWidth="90%" backgroundColor="rgba(155,155,155,0.1)" padding={30} margin={5} borderRadius={10}>
         <Text fontSize="6xl" textAlign="center">
           {formatLabel(table)}
         </Text>
         <Box maxHeight="300px" overflowY="auto" padding="30px" paddingTop="0px">
-          {columns.map((column) => (
-            <FormControl key={column.key}>
-              <FormLabel>{formatLabel(column.label)}</FormLabel>
-              {renderInput(column)}
-            </FormControl>
-          ))}
-
-          {children ? React.cloneElement(children, { foreignKeyColumn: firstColumnName, primaryKeyValue: primaryKeyValue, sendDataToParent: handleDataFromChild }) : null}
+          {columns.map((column) =>
+            column.key === foreignKeyColumn ? null : (
+              <FormControl key={column.key}>
+                <FormLabel>{formatLabel(column.label)}</FormLabel>
+                {renderInput(column)}
+              </FormControl>
+            )
+          )}
         </Box>
-
         {/* Search input field */}
         <Flex>
           <IconButton aria-label="Search" icon={<SearchIcon color={iconColor} />} variant="ghost" fontSize="20px" mr="2" />
           <Input value={searchQuery} onChange={handleSearchInputChange} placeholder="Search..." backgroundColor={backgroundColor} />
         </Flex>
-        <Box maxH="200px" overflowY="scroll" borderRadius="10px" backgroundColor={backgroundColor}>
+        <Box maxH="200px" overflowY="auto" borderRadius="10px" backgroundColor={backgroundColor}>
           <Table variant="simple">
             <Thead backgroundColor={header}>
               <Tr>
@@ -647,8 +618,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
             </Tbody>
           </Table>
         </Box>
-
-        <Flex justifyContent="center" gap={40} marginTop="5px">
+        <Flex justifyContent="center" gap={40} marginTop="20px">
           <Button onClick={() => handleOperation("insert")} colorScheme="green">
             Insert
           </Button>
@@ -664,4 +634,4 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
   ) : null;
 };
 
-export default GenericTable;
+export default NestedTable;

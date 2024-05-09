@@ -21,7 +21,10 @@ const Sidebar = ({ session }: { session: any }) => {
   const iconColor = useColorModeValue("gray.600", "gray.300");
   const backgroundColor = useColorModeValue("gray.100", "gray.700");
   const backgroundHover = useColorModeValue("#CBD5E0", "#4A5568");
-  const [typeName, setTypeName] = useState<string | null>(null);
+
+  const [userType, setUserType] = useState<string | null>(null);
+  const [employeeId, setEmployeeId] = useState<number | null>(1);
+  const [employeePosition, setEmployeePosition] = useState<string | null>("");
   const [searchTerm, setSearchTerm] = useState("");
   const menuItems = [
     { title: "Adeudos", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/adeudos" },
@@ -47,7 +50,9 @@ const Sidebar = ({ session }: { session: any }) => {
     { title: "Visitantes", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/visitantes" },
   ];
   const filteredMenuItems = menuItems.filter((item) => {
-    return item.title.toLowerCase().includes(searchTerm.toLowerCase()) && (typeName === "Administrador" || !item.link.includes("/admin/"));
+    return (
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) && ((userType === "Administrador" && employeePosition === "Bibliotecario") || !item.link.includes("/admin/"))
+    );
   });
 
   useEffect(() => {
@@ -56,7 +61,9 @@ const Sidebar = ({ session }: { session: any }) => {
         const response = await fetch(`/api/user?username=${session?.user.username}`, { method: "GET" });
         if (response.ok) {
           const data = await response.json();
-          setTypeName(data.type);
+          setUserType(data.type);
+          setEmployeeId(data.employeeId[Object.keys(data.employeeId)[0]]);
+          setEmployeePosition(data.employeePosition);
         } else {
           console.error("Failed to fetch user type");
         }
@@ -64,9 +71,10 @@ const Sidebar = ({ session }: { session: any }) => {
         console.error("Error fetching user type:", error);
       }
     };
-
-    fetchUserType();
-  }, []);
+    if (session) {
+      fetchUserType();
+    }
+  }, [session, employeeId, employeePosition]);
 
   return session?.user ? (
     <ColorModeProvider options={{ initialColorMode: "light" }}>
@@ -102,7 +110,7 @@ const Sidebar = ({ session }: { session: any }) => {
                   </Text>
                   <Text fontSize="md" color="green.500">
                     {" "}
-                    {typeName || "Loading..."}
+                    {userType || "Loading..."}
                   </Text>
                 </Flex>
               </Box>

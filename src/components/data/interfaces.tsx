@@ -28,6 +28,12 @@ interface TableProps {
   radioColumns?: RadioColumns[];
   unchangeableColumn?: string;
   checkColumns?: RadioColumns[];
+  primaryKeyColumn?: string;
+  foreignKeyColumn?: string;
+  primaryKeyValue?: string;
+  sendDataToParent?: (data: any) => void;
+  childTable?: string;
+  children?: any;
 }
 
 export type { Column, IdColumns, RowData, TableProps };
