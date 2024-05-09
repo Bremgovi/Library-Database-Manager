@@ -1,4 +1,4 @@
-import { ChangeEvent, SetStateAction, useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import useCustomToast from "./toasts";
 import { Column, RowData, TableProps } from "./data/interfaces";
 import { getSession } from "next-auth/react";
@@ -49,6 +49,15 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
   function handleDataFromChild(data: RowData) {
     setDataFromChild(data);
   }
+
+  useEffect(() => {
+    const fetchDataPeriodically = () => {
+      fetchData();
+      const intervalId = setInterval(fetchData, 500);
+      return () => clearInterval(intervalId);
+    };
+    fetchDataPeriodically();
+  }, []);
 
   useEffect(() => {
     setPrimaryKeyValue(JSON.parse(JSON.stringify(rowData))[firstColumnName]);
@@ -617,7 +626,7 @@ const GenericTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, 
           <IconButton aria-label="Search" icon={<SearchIcon color={iconColor} />} variant="ghost" fontSize="20px" mr="2" />
           <Input value={searchQuery} onChange={handleSearchInputChange} placeholder="Search..." backgroundColor={backgroundColor} />
         </Flex>
-        <Box maxH="200px" overflowY="scroll" borderRadius="10px" backgroundColor={backgroundColor}>
+        <Box overflow="auto" maxH="200px" borderRadius="10px" backgroundColor={backgroundColor}>
           <Table variant="simple">
             <Thead backgroundColor={header}>
               <Tr>

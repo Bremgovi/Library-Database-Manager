@@ -55,6 +55,15 @@ const NestedTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, f
   }, []);
 
   useEffect(() => {
+    const fetchDataPeriodically = () => {
+      fetchData(); // Fetch data immediately
+      const intervalId = setInterval(fetchData, 500); // Fetch data every 60 seconds
+      return () => clearInterval(intervalId); // Cleanup on unmount
+    };
+    fetchDataPeriodically();
+  }, []);
+
+  useEffect(() => {
     const fetchUserType = async () => {
       try {
         const response = await fetch(`/api/user?username=${session?.user.username}`, { method: "GET" });
@@ -206,10 +215,13 @@ const NestedTable = ({ table, endpoint, idColumns, radioColumns, checkColumns, f
             });
             if (response.ok) {
               const responseData = await response.json();
-              const updatedData = responseData.data.map((item: any) => ({
-                id: item[radioColumn.idColumn],
-                description: item[radioColumn.descriptionColumn],
-              }));
+              const updatedData = responseData.data.map((item: any) => {
+                console.log("item", item); // Log each item
+                return {
+                  id: item[radioColumn.idColumn],
+                  description: radioColumn.descriptionColumn.map((col: string) => item[col]).join(" "),
+                };
+              });
               radioDataToUpdate[radioColumn.idColumn] = updatedData;
             } else {
               console.error(`Failed to fetch radio columns`);

@@ -31,7 +31,6 @@ const Sidebar = ({ session }: { session: any }) => {
     { title: "Autores", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/autores" },
     { title: "Cargos", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/cargos" },
     { title: "Categorias", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/categorias" },
-    { title: "Detalles_prestamo", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/detalles_prestamo" },
     { title: "Direcciones", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/direcciones" },
     { title: "Editoriales", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/editoriales" },
     { title: "Empleados", color: textColor, icon: <Icon as={InfoIcon} color={iconColor} />, link: "/admin/tables/empleados" },

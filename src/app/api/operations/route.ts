@@ -109,9 +109,10 @@ export async function POST(req: Request) {
       const values = Object.values(data);
 
       const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders}) RETURNING *`;
+      
       const result = await db.query(query, values);
 
-      if(dataFromChild){
+      if(Object.keys(dataFromChild).length > 0){
         const columns = Object.keys(dataFromChild).join(', ');
         const placeholders = Object.keys(dataFromChild).map((_, index) => `$${index + 1}`).join(', ');
         const values = Object.values(dataFromChild);
@@ -156,6 +157,7 @@ export async function POST(req: Request) {
       
       const query = `UPDATE ${table} SET (${columns}) = (${placeholders}) WHERE ${conditionColumns} RETURNING *`;
       values.push(...conditionValues);
+      
       
 
       const result = await db.query(query, values);
